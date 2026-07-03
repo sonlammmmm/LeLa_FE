@@ -1,24 +1,42 @@
-import { Button } from "antd";
-import { Smile } from "lucide-react";
+import { ConfigProvider } from "antd";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { LandingPage } from "./features/landing/pages/LandingPage";
+
+const neoBrutalismTheme = {
+  token: {
+    colorPrimary: '#F05A4A', // Coral Red
+    colorInfo: '#2A8B9D', // Teal Blue
+    colorTextBase: '#1D2A3A', // Dark Navy
+    colorBgBase: '#F4F3EE', // Off-White
+    borderRadius: 999, // Soft brutalism pill exception
+    lineWidth: 3,
+    colorBorder: '#000000',
+    boxShadow: '6px 6px 0px 0px #000000',
+    fontFamily: '"Outfit", "Inter", sans-serif',
+  },
+  components: {
+    Button: {
+      controlHeight: 48,
+      fontWeight: 'bold',
+      defaultBg: '#ffffff',
+      defaultColor: '#1D2A3A',
+      primaryColor: '#ffffff',
+    },
+    Input: {
+      controlHeight: 48,
+    }
+  }
+};
 
 function App() {
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 text-center shadow-xl">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-          LeLa Frontend
-        </h1>
-        <p className="text-gray-500">
-          Vite + React + TailwindCSS 4 + Ant Design + Lucide React
-        </p>
-        <div className="flex justify-center py-4">
-          <Smile className="h-12 w-12 text-blue-500" />
-        </div>
-        <Button type="primary" size="large" className="w-full">
-          Bắt đầu
-        </Button>
-      </div>
-    </div>
+    <ConfigProvider theme={neoBrutalismTheme}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+        </Routes>
+      </BrowserRouter>
+    </ConfigProvider>
   );
 }
 
