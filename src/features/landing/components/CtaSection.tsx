@@ -1,10 +1,10 @@
 import { Button } from "antd";
 
 interface Props {
-  playSound?: () => void;
+  onAction?: (path: string) => void;
 }
 
-export function CtaSection({ playSound }: Props) {
+export function CtaSection({ onAction }: Props) {
   return (
     <section className="w-full bg-brand-navy py-32 border-y-[3px] border-brand-black">
       <div className="mx-auto max-w-[800px] px-6 lg:px-12 text-center">
@@ -16,7 +16,7 @@ export function CtaSection({ playSound }: Props) {
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Button 
-            onClick={playSound}
+            onClick={() => onAction?.('/login')}
             type="primary" 
             size="large" 
             className="h-16 px-10 text-xl font-bold brutal-shadow brutal-border brutal-pill bg-brand-coral text-white hover:bg-brand-teal transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_#000000]"
@@ -24,7 +24,7 @@ export function CtaSection({ playSound }: Props) {
             Đăng ký miễn phí
           </Button>
           <Button 
-            onClick={playSound}
+            onClick={() => onAction?.('#features')}
             size="large" 
             className="h-16 px-10 text-xl font-bold brutal-shadow brutal-border brutal-pill bg-white text-brand-navy hover:bg-brand-offwhite transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_#000000]"
           >

@@ -4,14 +4,26 @@ import { FlashcardDemo } from "../components/FlashcardDemo";
 import { CtaSection } from "../components/CtaSection";
 import { BackgroundPattern } from "../components/BackgroundPattern";
 import { Button } from "antd";
+import { useNavigate } from "react-router-dom";
 
 // We assume the asset is available to import
 import bubblePopSound from "../../../assets/sounds/bubble-pop.mp3";
 
 export function LandingPage() {
+  const navigate = useNavigate();
+  
   const playSound = () => {
     const audio = new Audio(bubblePopSound);
     audio.play().catch(e => console.error("Audio play failed", e));
+  };
+
+  const handleNav = (path: string) => {
+    playSound();
+    if (path.startsWith('#')) {
+       document.querySelector(path)?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+       navigate(path);
+    }
   };
 
   return (
@@ -21,7 +33,7 @@ export function LandingPage() {
       {/* Navbar */}
       <header className="sticky top-0 z-50 w-full bg-brand-offwhite/90 backdrop-blur border-b-[3px] border-brand-black">
         <div className="mx-auto max-w-[1400px] px-6 lg:px-12 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => handleNav('/')}>
             {/* Logo from brand kit (The Fox) */}
             <div className="w-12 h-12 flex items-center justify-center">
               <img src="/images/lela_fox_logo.png" alt="LeLa Fox Logo" className="w-full h-full object-contain drop-shadow-md" />
@@ -29,15 +41,15 @@ export function LandingPage() {
             <span className="text-2xl font-black text-brand-navy tracking-tight ml-2">LeLa</span>
           </div>
           <nav className="hidden md:flex items-center gap-8 font-bold text-brand-navy">
-            <a href="#features" className="hover:text-brand-coral transition-colors" onClick={playSound}>Tính năng</a>
-            <a href="#demo" className="hover:text-brand-coral transition-colors" onClick={playSound}>Dùng thử</a>
+            <a href="#features" className="hover:text-brand-coral transition-colors" onClick={(e) => { e.preventDefault(); handleNav('#features'); }}>Tính năng</a>
+            <a href="#demo" className="hover:text-brand-coral transition-colors" onClick={(e) => { e.preventDefault(); handleNav('#demo'); }}>Dùng thử</a>
           </nav>
           <div className="flex items-center gap-4">
-            <Button onClick={playSound} className="hidden md:inline-flex font-bold brutal-border brutal-pill bg-white text-brand-navy hover:-translate-y-0.5 transition-transform">
+            <Button onClick={() => handleNav('/login')} className="hidden md:inline-flex font-bold brutal-border brutal-pill bg-white text-brand-navy hover:-translate-y-0.5 transition-transform">
               Đăng nhập
             </Button>
             <Button 
-              onClick={playSound}
+              onClick={() => handleNav('/login')}
               type="primary" 
               className="font-bold brutal-border brutal-pill bg-brand-coral text-white hover:-translate-y-0.5 transition-transform"
             >
@@ -48,14 +60,14 @@ export function LandingPage() {
       </header>
 
       <main className="relative z-10">
-        <HeroSection playSound={playSound} />
+        <HeroSection onAction={handleNav} />
         <div id="features">
           <BentoFeatures />
         </div>
         <div id="demo">
           <FlashcardDemo playSound={playSound} />
         </div>
-        <CtaSection playSound={playSound} />
+        <CtaSection onAction={handleNav} />
       </main>
 
       {/* Footer */}

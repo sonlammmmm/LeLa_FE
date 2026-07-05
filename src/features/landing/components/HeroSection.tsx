@@ -3,10 +3,10 @@ import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 
 interface Props {
-  playSound?: () => void;
+  onAction?: (path: string) => void;
 }
 
-export function HeroSection({ playSound }: Props) {
+export function HeroSection({ onAction }: Props) {
   return (
     <section className="relative w-full pt-16 md:pt-24 pb-16">
       <div className="mx-auto max-w-[1400px] px-6 lg:px-12">
@@ -25,7 +25,7 @@ export function HeroSection({ playSound }: Props) {
             
             <div className="pt-2">
               <Button 
-                onClick={playSound}
+                onClick={() => onAction?.('/login')}
                 type="primary" 
                 size="large" 
                 className="h-14 px-8 text-lg font-bold brutal-shadow brutal-border brutal-pill bg-brand-coral text-white hover:bg-brand-teal transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_#000000]"
@@ -44,7 +44,7 @@ export function HeroSection({ playSound }: Props) {
             transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
             className="relative w-full max-w-[600px] mx-auto lg:ml-auto"
           >
-            <div className="aspect-[4/3] w-full overflow-hidden brutal-border brutal-shadow brutal-card bg-brand-teal relative group cursor-pointer" onClick={playSound}>
+            <div className="aspect-[4/3] w-full overflow-hidden brutal-border brutal-shadow brutal-card bg-brand-teal relative group cursor-pointer" onClick={() => onAction?.('#demo')}>
               <img 
                 src="/images/hero_youth_learning.png" 
                 alt="Sinh viên học ngoại ngữ với flashcard" 

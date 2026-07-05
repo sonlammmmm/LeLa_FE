@@ -1,6 +1,17 @@
 import { ConfigProvider } from "antd";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { LandingPage } from "./features/landing/pages/LandingPage";
+import { BrowserRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from "./shared/providers/AuthProvider";
+import { AppRoutes } from "./app/routes";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const neoBrutalismTheme = {
   token: {
@@ -30,13 +41,15 @@ const neoBrutalismTheme = {
 
 function App() {
   return (
-    <ConfigProvider theme={neoBrutalismTheme}>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-        </Routes>
-      </BrowserRouter>
-    </ConfigProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <ConfigProvider theme={neoBrutalismTheme}>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </ConfigProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 
