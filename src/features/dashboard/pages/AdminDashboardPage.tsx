@@ -1,49 +1,74 @@
-import { Statistic, Row, Col } from 'antd';
+import { Users, CreditCard, Layers, Hash } from 'lucide-react';
 
 export function AdminDashboardPage() {
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen">
+    <div className="max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-4xl font-black uppercase tracking-tighter text-[#1D2A3A]">
-          Dashboard Tổng Quan
+        <h1 className="text-3xl font-semibold tracking-tight text-geist-gray-1000">
+          Dashboard
         </h1>
-        <p className="text-gray-600 font-medium mt-1">Báo cáo hệ thống LeLa</p>
+        <p className="text-geist-gray-700 mt-2 text-sm">
+          System overview and high-level metrics
+        </p>
       </div>
 
-      <Row gutter={[24, 24]}>
-        <Col span={6}>
-          <div className="brutal-card bg-[#F05A4A] p-6 text-white text-center hover:-translate-y-2 transition-transform">
-            <Statistic title={<span className="text-white font-bold uppercase">Tổng User</span>} value={1250} valueStyle={{ color: 'white', fontWeight: 900, fontSize: '3rem' }} />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Metric 1 */}
+        <div className="flex flex-col p-5 border border-geist-gray-400 rounded-lg bg-geist-bg-100 shadow-sm">
+          <div className="flex items-center gap-2 text-geist-gray-700 mb-3">
+            <Users className="w-4 h-4" />
+            <span className="text-sm font-medium">Total Users</span>
           </div>
-        </Col>
-        <Col span={6}>
-          <div className="brutal-card bg-[#2A8B9D] p-6 text-white text-center hover:-translate-y-2 transition-transform">
-            <Statistic title={<span className="text-white font-bold uppercase">Doanh Thu Tháng</span>} value={45000000} suffix="VNĐ" valueStyle={{ color: 'white', fontWeight: 900, fontSize: '2rem' }} />
-          </div>
-        </Col>
-        <Col span={6}>
-          <div className="brutal-card bg-[#FFD700] p-6 text-[#1D2A3A] text-center hover:-translate-y-2 transition-transform">
-            <Statistic title={<span className="text-[#1D2A3A] font-bold uppercase">Bộ Thẻ Hệ Thống</span>} value={142} valueStyle={{ color: '#1D2A3A', fontWeight: 900, fontSize: '3rem' }} />
-          </div>
-        </Col>
-        <Col span={6}>
-          <div className="brutal-card bg-white p-6 text-[#1D2A3A] text-center hover:-translate-y-2 transition-transform">
-            <Statistic title={<span className="text-[#1D2A3A] font-bold uppercase">Thẻ Flashcard</span>} value={15200} valueStyle={{ color: '#1D2A3A', fontWeight: 900, fontSize: '3rem' }} />
-          </div>
-        </Col>
-      </Row>
-
-      <div className="mt-12 grid grid-cols-2 gap-8">
-        <div className="brutal-card bg-white p-6 min-h-[400px]">
-          <h2 className="text-2xl font-black uppercase mb-4">Hoạt động User 7 ngày qua</h2>
-          <div className="w-full h-full flex items-center justify-center bg-gray-100 border-4 border-black border-dashed">
-            <span className="font-bold text-gray-500">[ BIỂU ĐỒ RECHARTS ]</span>
+          <div className="text-3xl font-semibold tracking-tight text-geist-gray-1000">
+            1,250
           </div>
         </div>
-        <div className="brutal-card bg-white p-6 min-h-[400px]">
-          <h2 className="text-2xl font-black uppercase mb-4">Tỉ lệ gói Subscription</h2>
-          <div className="w-full h-full flex items-center justify-center bg-gray-100 border-4 border-black border-dashed">
-            <span className="font-bold text-gray-500">[ BIỂU ĐỒ TRÒN ]</span>
+
+        {/* Metric 2 */}
+        <div className="flex flex-col p-5 border border-geist-gray-400 rounded-lg bg-geist-bg-100 shadow-sm">
+          <div className="flex items-center gap-2 text-geist-gray-700 mb-3">
+            <CreditCard className="w-4 h-4" />
+            <span className="text-sm font-medium">Monthly Revenue</span>
+          </div>
+          <div className="text-3xl font-semibold tracking-tight text-geist-gray-1000">
+            45M <span className="text-xl text-geist-gray-700 font-normal">VND</span>
+          </div>
+        </div>
+
+        {/* Metric 3 */}
+        <div className="flex flex-col p-5 border border-geist-gray-400 rounded-lg bg-geist-bg-100 shadow-sm">
+          <div className="flex items-center gap-2 text-geist-gray-700 mb-3">
+            <Layers className="w-4 h-4" />
+            <span className="text-sm font-medium">System Decks</span>
+          </div>
+          <div className="text-3xl font-semibold tracking-tight text-geist-gray-1000">
+            142
+          </div>
+        </div>
+
+        {/* Metric 4 */}
+        <div className="flex flex-col p-5 border border-geist-gray-400 rounded-lg bg-geist-bg-100 shadow-sm">
+          <div className="flex items-center gap-2 text-geist-gray-700 mb-3">
+            <Hash className="w-4 h-4" />
+            <span className="text-sm font-medium">Flashcards</span>
+          </div>
+          <div className="text-3xl font-semibold tracking-tight text-geist-gray-1000">
+            15,200
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="flex flex-col border border-geist-gray-400 rounded-lg bg-geist-bg-100 shadow-sm p-6 min-h-[400px]">
+          <h2 className="text-base font-semibold text-geist-gray-1000 mb-6">User Activity (Last 7 Days)</h2>
+          <div className="flex-1 rounded-md bg-geist-gray-200 border border-geist-gray-400 border-dashed flex items-center justify-center">
+            <span className="text-sm text-geist-gray-700">Chart Placeholder</span>
+          </div>
+        </div>
+        <div className="flex flex-col border border-geist-gray-400 rounded-lg bg-geist-bg-100 shadow-sm p-6 min-h-[400px]">
+          <h2 className="text-base font-semibold text-geist-gray-1000 mb-6">Subscription Distribution</h2>
+          <div className="flex-1 rounded-md bg-geist-gray-200 border border-geist-gray-400 border-dashed flex items-center justify-center">
+            <span className="text-sm text-geist-gray-700">Chart Placeholder</span>
           </div>
         </div>
       </div>

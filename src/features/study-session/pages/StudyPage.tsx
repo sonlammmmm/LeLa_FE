@@ -59,36 +59,38 @@ export function StudyPage() {
         </div>
 
         <div 
-          className="brutal-card bg-white min-h-[400px] flex flex-col items-center justify-center p-8 mb-8 cursor-pointer relative"
+          className="brutal-card bg-white min-h-[400px] flex flex-col items-center justify-center p-8 mb-8 cursor-pointer relative border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1"
           onClick={() => !showBack && setShowBack(true)}
         >
           {/* FRONT */}
-          <div className="text-4xl font-black text-center mb-4">{currentCard.frontText}</div>
+          <div className="text-5xl font-black text-center mb-4 text-[#1D2A3A]">{currentCard.frontText}</div>
           {currentCard.phonetic && (
-            <div className="text-xl text-gray-500 mb-4">/{currentCard.phonetic}/</div>
+            <div className="text-2xl font-bold text-gray-500 mb-4 bg-gray-100 px-4 py-1 border-[3px] border-black">/{currentCard.phonetic}/</div>
           )}
 
           {/* BACK */}
           {showBack ? (
-            <div className="mt-8 pt-8 border-t-4 border-black w-full flex flex-col items-center animate-fade-in">
-              <div className="text-3xl font-bold text-[#2A8B9D] mb-4 text-center">{currentCard.backText}</div>
+            <div className="mt-8 pt-8 border-t-[4px] border-black w-full flex flex-col items-center animate-fade-in">
+              <div className="text-4xl font-black text-[#2A8B9D] mb-4 text-center">{currentCard.backText}</div>
               {currentCard.exampleText && (
-                <div className="text-lg italic text-gray-700 text-center">{currentCard.exampleText}</div>
+                <div className="text-xl italic font-medium text-gray-700 text-center bg-[#F4F3EE] p-4 border-[3px] border-black mt-2">
+                  "{currentCard.exampleText}"
+                </div>
               )}
             </div>
           ) : (
-            <div className="absolute bottom-4 text-gray-400 font-bold animate-pulse">
+            <div className="absolute bottom-6 bg-[#1D2A3A] text-white px-6 py-2 border-[3px] border-black font-black uppercase text-sm tracking-widest animate-pulse">
               [ NHẤN ĐỂ LẬT THẺ ]
             </div>
           )}
         </div>
 
         {showBack && (
-          <div className="grid grid-cols-4 gap-4 animate-fade-in">
-            <Button onClick={() => handleNext(1)} className="h-16 brutal-border brutal-shadow font-black !bg-red-200 text-red-900 text-lg">LẠI</Button>
-            <Button onClick={() => handleNext(2)} className="h-16 brutal-border brutal-shadow font-black !bg-orange-200 text-orange-900 text-lg">KHÓ</Button>
-            <Button onClick={() => handleNext(3)} className="h-16 brutal-border brutal-shadow font-black !bg-green-200 text-green-900 text-lg">TỐT</Button>
-            <Button onClick={() => handleNext(4)} className="h-16 brutal-border brutal-shadow font-black !bg-blue-200 text-blue-900 text-lg">DỄ</Button>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
+            <Button onClick={() => handleNext(1)} className="h-16 brutal-border border-[3px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black !bg-[#ffcccc] hover:!bg-[#ff9999] text-[#cc0000] text-xl hover:-translate-y-1 transition-transform">LẠI</Button>
+            <Button onClick={() => handleNext(2)} className="h-16 brutal-border border-[3px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black !bg-[#ffe6cc] hover:!bg-[#ffcc99] text-[#cc6600] text-xl hover:-translate-y-1 transition-transform">KHÓ</Button>
+            <Button onClick={() => handleNext(3)} className="h-16 brutal-border border-[3px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black !bg-[#ccffcc] hover:!bg-[#99ff99] text-[#009900] text-xl hover:-translate-y-1 transition-transform">TỐT</Button>
+            <Button onClick={() => handleNext(4)} className="h-16 brutal-border border-[3px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black !bg-[#cce5ff] hover:!bg-[#99ccff] text-[#0066cc] text-xl hover:-translate-y-1 transition-transform">DỄ</Button>
           </div>
         )}
       </div>

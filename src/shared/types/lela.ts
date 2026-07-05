@@ -13,6 +13,7 @@ export type SrsGrade = 'AGAIN' | 'HARD' | 'GOOD' | 'EASY';
 export interface UserInfo {
   id: string;
   username: string;
+  fullName?: string;
   email: string;
   roles: UserRole[];
 }

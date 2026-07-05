@@ -12,23 +12,29 @@
   .brutal-shadow {
     box-shadow: 6px 6px 0px 0px #000000 !important;
   }
+
   .brutal-shadow-sm {
     box-shadow: 3px 3px 0px 0px #000000 !important;
   }
+
   .brutal-border {
     border: 3px solid #000000 !important;
   }
+
   .brutal-card {
     border: 3px solid #000000 !important;
     box-shadow: 6px 6px 0px 0px #000000 !important;
-    border-radius: 1.5rem !important; /* Soft Brutalism exception */
+    border-radius: 1.5rem !important;
+    /* Soft Brutalism exception */
     transition-property: transform;
     transition-duration: 300ms;
   }
+
   .brutal-pill {
     border: 3px solid #000000 !important;
     box-shadow: 6px 6px 0px 0px #000000 !important;
-    border-radius: 9999px !important; /* Soft Brutalism exception */
+    border-radius: 9999px !important;
+    /* Soft Brutalism exception */
   }
 }
 
@@ -40,5 +46,66 @@ body {
 }
 
 ::selection {
-  background-color: rgba(240, 90, 74, 0.3); /* brand-coral/30 */
-}
+  background-color: rgba(240, 90, 74, 0.3);
+
+  /* brand-coral/30 */
+  /* Brutalist Form Validation Errors */
+  .ant-form-item {
+    margin-bottom: 28px !important;
+    /* Reserve enough fixed space for the absolute error text */
+  }
+
+  .ant-form-item-explain {
+    position: absolute !important;
+    top: 100%;
+    left: 0;
+    width: 100%;
+  }
+
+  .ant-form-item-explain-error {
+    font-weight: bold !important;
+    color: var(--color-brand-coral) !important;
+    font-size: 0.85rem;
+    margin-top: 4px;
+  }
+
+  /* Brutalist Global Toast Messages */
+  .ant-message {
+    top: auto !important;
+    bottom: 24px !important;
+    right: 24px !important;
+    left: auto !important;
+    display: flex !important;
+    flex-direction: column;
+    align-items: flex-end !important;
+  }
+
+  .ant-message-notice {
+    text-align: right !important;
+  }
+
+  .ant-message-notice-content {
+    border: 3px solid #000000 !important;
+    box-shadow: 6px 6px 0px 0px #000000 !important;
+    border-radius: 0px !important;
+    /* Strict brutalism */
+    font-weight: 900 !important;
+    padding: 12px 20px !important;
+  }
+
+  .ant-message-success .ant-message-notice-content {
+    background-color: var(--color-brand-teal) !important;
+    color: #000000 !important;
+  }
+
+  .ant-message-error .ant-message-notice-content {
+    background-color: var(--color-brand-coral) !important;
+    color: #000000 !important;
+  }
+
+  /* Geist Design System Colors */
+  :root {}
+
+  .dark {}
+
+  @theme {}

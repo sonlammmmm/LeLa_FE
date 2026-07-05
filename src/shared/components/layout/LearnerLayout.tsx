@@ -3,7 +3,7 @@ import { Outlet, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../providers/AuthProvider';
 import { Button, Dropdown } from 'antd';
 
-export function MainLayout() {
+export function LearnerLayout() {
   const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
 

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { HeroSection } from "../components/HeroSection";
 import { BentoFeatures } from "../components/BentoFeatures";
 import { FlashcardDemo } from "../components/FlashcardDemo";
@@ -5,12 +6,15 @@ import { CtaSection } from "../components/CtaSection";
 import { BackgroundPattern } from "../components/BackgroundPattern";
 import { Button } from "antd";
 import { useNavigate } from "react-router-dom";
+import { AuthModal } from "../../auth/components/AuthModal";
 
 // We assume the asset is available to import
 import bubblePopSound from "../../../assets/sounds/bubble-pop.mp3";
 
 export function LandingPage() {
   const navigate = useNavigate();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authView, setAuthView] = useState<'login' | 'register'>('login');
   
   const playSound = () => {
     const audio = new Audio(bubblePopSound);
@@ -19,7 +23,10 @@ export function LandingPage() {
 
   const handleNav = (path: string) => {
     playSound();
-    if (path.startsWith('#')) {
+    if (path === '/login') {
+      setAuthView('login');
+      setIsAuthModalOpen(true);
+    } else if (path.startsWith('#')) {
        document.querySelector(path)?.scrollIntoView({ behavior: 'smooth' });
     } else {
        navigate(path);
@@ -81,6 +88,13 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Auth Modal */}
+      <AuthModal 
+        open={isAuthModalOpen} 
+        onCancel={() => setIsAuthModalOpen(false)} 
+        defaultView={authView}
+      />
     </div>
   );
 }

@@ -1,7 +1,6 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from '../../features/landing/pages/LandingPage';
 import { ProtectedRoute } from './ProtectedRoute';
-import { LoginPage } from '../../features/auth/pages/LoginPage';
 
 import { TagsPage } from '../../features/master-data/pages/TagsPage';
 import { LanguagesPage } from '../../features/master-data/pages/LanguagesPage';
@@ -20,22 +19,26 @@ import { LeaderboardPage } from '../../features/gamification/pages/LeaderboardPa
 import { LearnerDashboardPage } from '../../features/dashboard/pages/LearnerDashboardPage';
 import { PricingPage } from '../../features/subscription/pages/PricingPage';
 import { AdminDashboardPage } from '../../features/dashboard/pages/AdminDashboardPage';
-import { MainLayout } from '../../shared/components/layout/MainLayout';
+import { LearnerLayout } from '../../shared/components/layout/LearnerLayout';
+import { AdminLayout } from '../../shared/components/layout/AdminLayout';
+import { LearnerThemeProvider } from '../../shared/providers/LearnerThemeProvider';
+import { ThemeProvider } from '../../shared/providers/ThemeProvider';
 
 const Unauthorized = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold text-red-500">Unauthorized</div>;
 
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Public routes (No Header/Footer from MainLayout, they handle it themselves) */}
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/pricing" element={<PricingPage />} />
+      {/* Public routes */}
+      <Route path="/" element={<LearnerThemeProvider><LandingPage /></LearnerThemeProvider>} />
+      {/* Legacy auth routes redirect to home where modal can be triggered */}
+      <Route path="/login" element={<Navigate to="/" replace />} />
+      <Route path="/register" element={<Navigate to="/" replace />} />
+      <Route path="/pricing" element={<LearnerThemeProvider><PricingPage /></LearnerThemeProvider>} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
-      {/* Routes wrapped with Header & Footer */}
-      <Route element={<MainLayout />}>
-        {/* Protected Learner routes */}
+      {/* Learner routes wrapped with LearnerThemeProvider and LearnerLayout */}
+      <Route element={<LearnerThemeProvider><LearnerLayout /></LearnerThemeProvider>}>
         <Route element={<ProtectedRoute allowedRoles={['LEARNER']} />}>
           <Route path="/dashboard" element={<LearnerDashboardPage />} />
           <Route path="/my-decks" element={<MyDecksPage />} />
@@ -45,12 +48,16 @@ export function AppRoutes() {
           <Route path="/my-quiz-attempts" element={<MyQuizAttemptsPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
         </Route>
+      </Route>
 
-        {/* Protected Admin routes */}
-        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+      {/* Admin routes wrapped with ThemeProvider and AdminLayout */}
+      <Route element={<ThemeProvider><AdminLayout /></ThemeProvider>}>
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'CONTENT_CREATOR', 'MODERATOR']} />}>
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-          <Route path="/admin/tags" element={<TagsPage />} />
-          <Route path="/admin/languages" element={<LanguagesPage />} />
+          <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+            <Route path="/admin/tags" element={<TagsPage />} />
+            <Route path="/admin/languages" element={<LanguagesPage />} />
+          </Route>
           <Route path="/admin/decks" element={<DecksAdminPage />} />
           <Route path="/admin/decks/:deckId/flashcards" element={<FlashcardsAdminPage />} />
           <Route path="/admin/quizzes" element={<QuizzesAdminPage />} />
