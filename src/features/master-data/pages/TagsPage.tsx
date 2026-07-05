@@ -133,6 +133,17 @@ export function TagsPage() {
         title={editingTag ? 'Chỉnh sửa thẻ' : 'Thêm thẻ'}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        showCloseButton={false}
+        headerActions={
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)}>
+              Hủy
+            </Button>
+            <Button size="sm" onClick={handleSubmit(onSubmit)} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Đang lưu...' : 'Lưu'}
+            </Button>
+          </div>
+        }
       >
         <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
           <div className="space-y-2">
@@ -144,14 +155,7 @@ export function TagsPage() {
             {errors.name && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
           </div>
           
-          <div className="flex justify-end gap-3 mt-8">
-            <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
-              Hủy
-            </Button>
-            <Button type="submit" disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? 'Đang lưu...' : 'Lưu'}
-            </Button>
-          </div>
+          
         </form>
       </Modal>
     </div>

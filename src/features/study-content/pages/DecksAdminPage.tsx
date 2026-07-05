@@ -21,6 +21,10 @@ type FormValues = {
   visibility: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
   coverImageUrl: string;
   displayMode: 'FRONT' | 'BACK' | 'RANDOM';
+  isFeatured?: boolean;
+  status?: 'DRAFT' | 'PENDING_REVIEW' | 'PUBLISHED' | 'REJECTED' | 'ARCHIVED';
+  rejectionReason?: string;
+  isActive?: boolean;
 };
 
 const DIFFICULTY_MAP: Record<string, string> = {
@@ -30,8 +34,10 @@ const DIFFICULTY_MAP: Record<string, string> = {
 };
 
 const STATUS_MAP: Record<string, string> = {
-  PUBLISHED: 'Đã xuất bản',
   DRAFT: 'Bản nháp',
+  PENDING_REVIEW: 'Chờ duyệt',
+  PUBLISHED: 'Đã xuất bản',
+  REJECTED: 'Từ chối',
   ARCHIVED: 'Đã lưu trữ',
 };
 
@@ -47,8 +53,10 @@ export function DecksAdminPage() {
   const [isPixabayLoading, setIsPixabayLoading] = useState(false);
   
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormValues>({
-    defaultValues: { difficulty: 'BEGINNER', visibility: 'PUBLIC', displayMode: 'RANDOM' }
+    defaultValues: { difficulty: 'BEGINNER', visibility: 'PUBLIC', displayMode: 'RANDOM', isFeatured: false, isActive: true, status: 'DRAFT' }
   });
+
+  const watchStatus = watch('status');
 
   const { data: decksData, isLoading } = useQuery({
     queryKey: ['decks-admin'],
@@ -98,7 +106,7 @@ export function DecksAdminPage() {
 
     setIsPixabayLoading(true);
     try {
-      const res = await fetch(`https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(query)}&image_type=photo&orientation=horizontal&per_page=12`);
+      const res = await fetch(`https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(query)}&image_type=photo&orientation=horizontal&per_page=48`);
       const data = await res.json();
       setPixabayResults(data.hits || []);
     } catch (err) {
@@ -143,11 +151,15 @@ export function DecksAdminPage() {
         difficulty: deck.difficulty as any,
         visibility: deck.visibility as any,
         coverImageUrl: deck.coverImageUrl || '',
-        displayMode: deck.displayMode || 'RANDOM'
+        displayMode: deck.displayMode || 'RANDOM',
+        isFeatured: deck.isFeatured,
+        status: deck.status as any,
+        rejectionReason: deck.rejectionReason || '',
+        isActive: deck.isActive
       });
     } else {
       setEditingDeck(null);
-      reset({ difficulty: 'BEGINNER', visibility: 'PUBLIC', languageId: undefined, displayMode: 'RANDOM' });
+      reset({ difficulty: 'BEGINNER', visibility: 'PUBLIC', languageId: undefined, displayMode: 'RANDOM', isFeatured: false, isActive: true, status: 'DRAFT', rejectionReason: '' });
     }
     setIsModalOpen(true);
   };
@@ -264,6 +276,17 @@ export function DecksAdminPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         className="max-w-4xl"
+        showCloseButton={false}
+        headerActions={
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)}>
+              Hủy
+            </Button>
+            <Button size="sm" onClick={handleSubmit(onSubmit)} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Đang lưu...' : 'Lưu'}
+            </Button>
+          </div>
+        }
       >
         <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
           <div className="space-y-2">
@@ -286,7 +309,7 @@ export function DecksAdminPage() {
               <label className="text-sm font-medium text-geist-gray-1000">Ngôn ngữ</label>
               <select 
                 {...register('languageId', { required: true })}
-                className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
+                className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-geist-bg-100 px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
               >
                 <option value="">Chọn ngôn ngữ...</option>
                 {languagesData?.data?.map(l => (
@@ -307,7 +330,7 @@ export function DecksAdminPage() {
               <label className="text-sm font-medium text-geist-gray-1000">Độ khó</label>
               <select 
                 {...register('difficulty', { required: true })}
-                className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
+                className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-geist-bg-100 px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
               >
                 <option value="BEGINNER">Sơ cấp</option>
                 <option value="INTERMEDIATE">Trung cấp</option>
@@ -318,7 +341,7 @@ export function DecksAdminPage() {
               <label className="text-sm font-medium text-geist-gray-1000">Hiển thị</label>
               <select 
                 {...register('visibility', { required: true })}
-                className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
+                className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-geist-bg-100 px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
               >
                 <option value="PUBLIC">Công khai</option>
                 <option value="PRIVATE">Riêng tư</option>
@@ -354,15 +377,52 @@ export function DecksAdminPage() {
               </label>
             </div>
           </div>
-          
-          <div className="flex justify-end gap-3 mt-8">
-            <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
-              Hủy
-            </Button>
-            <Button type="submit" disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? 'Đang lưu...' : 'Lưu'}
-            </Button>
+
+          <div className="pt-4 border-t border-geist-gray-300">
+            <h3 className="text-sm font-semibold text-geist-gray-1000 mb-4">Cấu hình Quản trị (Admin)</h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-geist-gray-1000">Trạng thái kiểm duyệt</label>
+                <select 
+                  {...register('status')}
+                  className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-geist-bg-100 px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
+                >
+                  <option value="DRAFT">Bản nháp</option>
+                  <option value="PENDING_REVIEW">Chờ duyệt</option>
+                  <option value="PUBLISHED">Đã xuất bản</option>
+                  <option value="REJECTED">Từ chối</option>
+                  <option value="ARCHIVED">Lưu trữ</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-4 mt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" {...register('isFeatured')} className="w-4 h-4 rounded text-geist-blue-700 border-geist-gray-400 focus:ring-geist-blue-700" />
+                  <span className="text-sm font-medium text-geist-gray-1000">Nổi bật (Hiển thị lên trang chủ)</span>
+                </label>
+                
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" {...register('isActive')} className="w-4 h-4 rounded text-geist-blue-700 border-geist-gray-400 focus:ring-geist-blue-700" />
+                  <span className="text-sm font-medium text-geist-gray-1000">Hoạt động (Không bị khoá)</span>
+                </label>
+              </div>
+            </div>
+
+            {watchStatus === 'REJECTED' && (
+              <div className="space-y-2 mt-4">
+                <label className="text-sm font-medium text-geist-red-800">Lý do từ chối (Gửi cho người tạo)</label>
+                <textarea 
+                  {...register('rejectionReason')} 
+                  className="flex w-full resize-none rounded-md border border-geist-red-400 bg-geist-red-100/10 px-3 py-2 text-sm text-geist-gray-1000 placeholder:text-geist-gray-600 focus:outline-none focus:ring-2 focus:ring-geist-red-700 transition-colors"
+                  rows={2}
+                  placeholder="Vui lòng cho biết tại sao bộ thẻ này bị từ chối..."
+                />
+              </div>
+            )}
           </div>
+          
+          
         </form>
       </Modal>
 
@@ -393,13 +453,14 @@ export function DecksAdminPage() {
               {pixabayResults.map((img: any) => (
                 <div 
                   key={img.id} 
-                  className="cursor-pointer brutal-card overflow-hidden hover:-translate-y-1 transition-transform group relative"
+                  className="cursor-pointer rounded-md overflow-hidden border border-geist-gray-200 hover:-translate-y-1 transition-transform group relative"
                   onClick={() => selectPixabayImage(img.webformatURL)}
                 >
                   <img 
                     src={img.webformatURL} 
                     alt={img.tags} 
                     className="w-full h-32 object-cover"
+                    loading="lazy"
                   />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                     <span className="text-white font-medium text-sm">Chọn ảnh</span>

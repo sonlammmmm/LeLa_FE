@@ -5,6 +5,7 @@ import { Plus, Edit2, Trash2, ArrowLeft, Upload, Wand2, Volume2, Image as ImageI
 import { useParams, useNavigate } from 'react-router-dom';
 import { message, Modal as AntdModal } from 'antd'; // Keeping message for toast notifications
 import { flashcardsApi } from '../api/flashcards.api';
+import { tagsApi } from '../../master-data/api/tags.api';
 import type { FlashcardResponse } from '../../../shared/types/lela';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input } from '../../../shared/components/ui/Input';
@@ -20,13 +21,14 @@ type FormValues = {
   frontAudioUrl: string;
   hint: string;
   cardColor: string;
+  tagIds: number[];
+  isActive: boolean;
 };
 
 const CARD_COLORS = [
   { value: 'bg-brand-coral', label: 'Coral' },
   { value: 'bg-brand-teal', label: 'Teal' },
   { value: 'bg-brand-navy', label: 'Navy' },
-  { value: 'bg-geist-blue-600', label: 'Blue' },
   { value: 'bg-[#FFB703]', label: 'Yellow' },
   { value: 'bg-[#FB8500]', label: 'Orange' },
   { value: 'bg-[#FF006E]', label: 'Pink' },
@@ -47,6 +49,8 @@ export function FlashcardsAdminPage() {
   const [pixabayResults, setPixabayResults] = useState<any[]>([]);
   const [isPixabayLoading, setIsPixabayLoading] = useState(false);
   const [isPreviewFlipped, setIsPreviewFlipped] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
+  const [isCreatingTag, setIsCreatingTag] = useState(false);
 
   const { register, handleSubmit, reset, watch, setValue, getValues, formState: { errors } } = useForm<FormValues>();
 
@@ -54,6 +58,11 @@ export function FlashcardsAdminPage() {
     queryKey: ['flashcards', deckId],
     queryFn: () => flashcardsApi.getByDeckId(Number(deckId)),
     enabled: !!deckId,
+  });
+
+  const { data: tagsData } = useQuery({
+    queryKey: ['tags'],
+    queryFn: () => tagsApi.getAll(),
   });
 
   const saveMutation = useMutation({
@@ -97,6 +106,24 @@ export function FlashcardsAdminPage() {
     onError: (err: any) => message.error(err.message || 'Có lỗi xảy ra khi import'),
   });
 
+  const createTagMutation = useMutation({
+    mutationFn: (name: string) => tagsApi.create({ name }),
+    onSuccess: (res) => {
+      message.success('Tạo tag thành công');
+      queryClient.invalidateQueries({ queryKey: ['tags'] });
+      setNewTagName('');
+      setIsCreatingTag(false);
+      const currentTags = getValues('tagIds') || [];
+      setValue('tagIds', [...currentTags, res.data?.id] as any);
+    },
+    onError: (err: any) => message.error(err.response?.data?.message || 'Có lỗi xảy ra khi tạo tag'),
+  });
+
+  const handleCreateTag = () => {
+    if (!newTagName.trim()) return;
+    createTagMutation.mutate(newTagName.trim());
+  };
+
   const handleLookup = async () => {
     const word = getValues('frontText');
     if (!word) {
@@ -110,23 +137,31 @@ export function FlashcardsAdminPage() {
     setValue('backText', '');
 
     try {
-      // 1. Fetch phonetic & audio from Dictionary API
-      const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-      if (dictRes.ok) {
-        const data = await dictRes.json();
-        const entry = data[0];
+      // 1. Fetch phonetic & audio from Dictionary API (handle multi-word)
+      const wordsToLookup = word.trim().split(/\s+/);
+      const dictPromises = wordsToLookup.map(async (w) => {
+        const cleanWord = w.replace(/[^a-zA-Z]/g, '');
+        if (!cleanWord) return { phonetic: w, audio: '' };
 
-        if (entry.phonetic) setValue('phonetic', entry.phonetic);
-        else if (entry.phonetics && entry.phonetics.length > 0) {
-          const p = entry.phonetics.find((x: any) => x.text);
-          if (p) setValue('phonetic', p.text);
-        }
+        try {
+          const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${cleanWord}`);
+          if (res.ok) {
+            const data = await res.json();
+            const entry = data[0];
+            let p = entry.phonetic || entry.phonetics?.find((x: any) => x.text)?.text || cleanWord;
+            let a = entry.phonetics?.find((x: any) => x.audio)?.audio || '';
+            return { phonetic: p, audio: a };
+          }
+        } catch (e) { }
+        return { phonetic: cleanWord, audio: '' };
+      });
 
-        if (entry.phonetics && entry.phonetics.length > 0) {
-          const audio = entry.phonetics.find((x: any) => x.audio)?.audio;
-          if (audio) setValue('frontAudioUrl', audio);
-        }
-      }
+      const results = await Promise.all(dictPromises);
+      const fullPhonetic = results.map(r => r.phonetic).join(' ').trim();
+      const firstAudioUrl = results.find(r => r.audio)?.audio || '';
+
+      if (fullPhonetic) setValue('phonetic', fullPhonetic);
+      if (firstAudioUrl) setValue('frontAudioUrl', firstAudioUrl);
 
       // 2. Fetch Vietnamese meaning from MyMemory API
       const transRes = await fetch(`https://api.mymemory.translated.net/get?q=${word}&langpair=en|vi`);
@@ -163,7 +198,7 @@ export function FlashcardsAdminPage() {
 
     setIsPixabayLoading(true);
     try {
-      const res = await fetch(`https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(query)}&image_type=photo&orientation=horizontal&per_page=12`);
+      const res = await fetch(`https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(query)}&image_type=photo&orientation=horizontal&per_page=48`);
       const data = await res.json();
       setPixabayResults(data.hits || []);
     } catch (err) {
@@ -229,8 +264,10 @@ export function FlashcardsAdminPage() {
           frontAudioUrl: item.frontAudioUrl || '',
           hint: item.hint || item.Hint || '',
           cardColor: item.cardColor || 'bg-brand-coral',
+          tagIds: [],
           deckId: Number(deckId),
-          createdById: Number(user?.id)
+          createdById: Number(user?.id),
+          isActive: true
         })).filter(c => c.frontText && c.backText);
 
         if (cardsToImport.length === 0) {
@@ -257,18 +294,24 @@ export function FlashcardsAdminPage() {
         frontImageUrl: card.frontImageUrl || '',
         frontAudioUrl: card.frontAudioUrl || '',
         hint: card.hint || '',
-        cardColor: card.cardColor || 'bg-brand-coral'
+        cardColor: card.cardColor || 'bg-brand-coral',
+        tagIds: card.tagIds?.map(String) as any || [],
+        isActive: card.isActive !== false
       });
     } else {
       setEditingCard(null);
-      reset({ frontText: '', backText: '', phonetic: '', exampleText: '', frontImageUrl: '', frontAudioUrl: '', hint: '', cardColor: 'bg-brand-coral' });
+      reset({ frontText: '', backText: '', phonetic: '', exampleText: '', frontImageUrl: '', frontAudioUrl: '', hint: '', cardColor: 'bg-brand-coral', tagIds: [], isActive: true });
     }
     setIsModalOpen(true);
     setIsPreviewFlipped(false);
   };
 
   const onSubmit = (values: FormValues) => {
-    saveMutation.mutate(values);
+    const payload = {
+      ...values,
+      tagIds: values.tagIds ? (Array.isArray(values.tagIds) ? values.tagIds.map(Number) : [Number(values.tagIds)]) : []
+    };
+    saveMutation.mutate(payload as FormValues);
   };
 
   return (
@@ -348,7 +391,22 @@ export function FlashcardsAdminPage() {
                 </tr>
               ))}
               {(!data?.content || data.content.length === 0) && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-geist-gray-600">Không tìm thấy thẻ nào trong bộ thẻ này</td></tr>
+                <tr>
+                  <td colSpan={5} className="px-4 py-16 text-center bg-geist-bg-100">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-geist-gray-100 flex items-center justify-center">
+                        <ImageIcon className="w-6 h-6 text-geist-gray-400" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-geist-gray-1000">Chưa có thẻ nào</p>
+                        <p className="text-sm text-geist-gray-600">Tạo thẻ mới hoặc import thẻ từ file để bắt đầu học.</p>
+                      </div>
+                      <Button onClick={() => openModal()} className="mt-2" variant="outline">
+                        <Plus className="w-4 h-4 mr-2" /> Thêm thẻ ngay
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -360,9 +418,20 @@ export function FlashcardsAdminPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         className="max-w-7xl"
+        showCloseButton={false}
+        headerActions={
+          <>
+            <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)} className="h-8 px-3 text-sm">
+              Hủy
+            </Button>
+            <Button type="submit" form="flashcard-form" disabled={saveMutation.isPending} className="h-8 px-3 text-sm">
+              {saveMutation.isPending ? 'Đang lưu...' : 'Lưu'}
+            </Button>
+          </>
+        }
       >
         <div className="mt-4 grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 lg:col-span-7 xl:col-span-8">
+          <form id="flashcard-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6 lg:col-span-7 xl:col-span-8 relative">
             <div className="space-y-2">
               <label className="text-sm font-medium text-geist-gray-1000">Từ vựng (Mặt trước)</label>
               <textarea
@@ -434,26 +503,80 @@ export function FlashcardsAdminPage() {
                     {CARD_COLORS.map(c => (
                       <label key={c.value} htmlFor={`color-${c.label}`} className="cursor-pointer">
                         <input id={`color-${c.label}`} type="radio" value={c.value} {...register('cardColor')} className="sr-only" />
-                        <div className={`w-10 h-10 rounded-full ${c.value} ${watch('cardColor') === c.value ? 'border-[3px] border-black scale-110 opacity-100 z-10 relative' : 'border-2 border-transparent opacity-50 hover:opacity-80 hover:scale-105'} transition-all duration-200`} title={c.label}></div>
+                        <div className={`w-10 h-10 rounded-full ${c.value} ${watch('cardColor') === c.value ? 'ring-2 ring-offset-2 ring-geist-blue-500 scale-105 opacity-100 z-10 relative shadow-sm' : 'border border-geist-gray-200 opacity-60 hover:opacity-100 hover:scale-105'} transition-all duration-200`} title={c.label}></div>
                       </label>
                     ))}
                   </div>
                 </div>
               </div>
+
+              <div className="grid grid-cols-1 gap-4 mb-4 mt-4 border-t border-geist-gray-200 pt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-geist-gray-1000">Tags (Phân loại)</label>
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {tagsData?.data?.content?.map(tag => {
+                      const isSelected = watch('tagIds')?.includes(tag.id as any) || watch('tagIds')?.includes(String(tag.id) as any);
+                      return (
+                        <label key={tag.id} className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-full border text-xs font-medium transition-colors ${isSelected ? 'bg-geist-blue-100 border-geist-blue-300 text-geist-blue-800' : 'bg-geist-gray-100 border-geist-gray-300 text-geist-gray-700 hover:bg-geist-gray-200 hover:border-geist-gray-400'}`}>
+                          <input type="checkbox" value={tag.id} {...register('tagIds')} className="sr-only" />
+                          <span>{tag.name}</span>
+                        </label>
+                      );
+                    })}
+                    
+                    {isCreatingTag ? (
+                      <div className="flex items-center gap-1 bg-geist-bg-100 border border-geist-gray-300 rounded-full pl-3 pr-1 py-1">
+                        <input
+                          type="text"
+                          value={newTagName}
+                          onChange={(e) => setNewTagName(e.target.value)}
+                          placeholder="Tên tag..."
+                          className="text-xs bg-transparent border-none outline-none w-20 text-geist-gray-1000 placeholder:text-geist-gray-500"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleCreateTag();
+                            } else if (e.key === 'Escape') {
+                              setIsCreatingTag(false);
+                            }
+                          }}
+                        />
+                        <button type="button" onClick={handleCreateTag} disabled={createTagMutation.isPending || !newTagName.trim()} className="p-1 text-geist-blue-600 hover:bg-geist-blue-100 rounded-full disabled:opacity-50">
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => setIsCreatingTag(true)} className="flex items-center gap-1 px-3 py-1.5 rounded-full border border-dashed border-geist-gray-400 text-xs font-medium text-geist-gray-600 hover:text-geist-gray-900 hover:border-geist-gray-600 transition-colors">
+                        <Plus className="w-3 h-3" /> Thêm tag
+                      </button>
+                    )}
+                    
+                    {(!tagsData?.data?.content || tagsData.data.content.length === 0) && !isCreatingTag && (
+                      <span className="text-xs text-geist-gray-500 italic">Chưa có tag nào được tạo.</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="pt-4 border-t border-geist-gray-300">
+              <label className="flex items-center gap-2 cursor-pointer p-3 border border-geist-gray-300 rounded-md bg-geist-bg-100 hover:bg-geist-gray-100/50 transition-colors">
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4 rounded border-geist-gray-400 text-geist-blue-700 focus:ring-geist-blue-700 bg-transparent"
+                  {...register('isActive')}
+                />
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-geist-gray-1000">Thẻ đang hoạt động</span>
+                  <span className="text-xs text-geist-gray-700">Tắt để ẩn thẻ này khỏi bộ học mà không xóa nó khỏi hệ thống.</span>
+                </div>
+              </label>
             </div>
 
-            <div className="flex justify-end gap-3 mt-8">
-              <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
-                Hủy
-              </Button>
-              <Button type="submit" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? 'Đang lưu...' : 'Lưu'}
-              </Button>
-            </div>
           </form>
 
           {/* Live Preview Column */}
-          <div className="hidden lg:flex flex-col items-center justify-center p-8 bg-geist-gray-100 rounded-xl relative overflow-hidden lg:col-span-5 xl:col-span-4">
+          <div className="hidden lg:flex flex-col items-center justify-center p-8 bg-geist-gray-100 rounded-xl relative overflow-hidden lg:col-span-5 xl:col-span-4 sticky top-8 self-start">
             <h3 className="text-sm font-bold text-geist-gray-600 uppercase tracking-widest mb-6">Mô phỏng (Live Preview)</h3>
             <div
               className="relative w-full max-w-[340px] aspect-[3/4] cursor-pointer group"
@@ -464,34 +587,38 @@ export function FlashcardsAdminPage() {
                 className={`relative w-full h-full transition-transform duration-500 ${isPreviewFlipped ? '[transform:rotateY(180deg)]' : ''}`}
                 style={{ transformStyle: 'preserve-3d' }}
               >
-                <div className="absolute inset-0 brutal-card bg-white p-8 flex flex-col items-center justify-center text-center" style={{ backfaceVisibility: 'hidden' }}>
+                <div className="absolute inset-0 bg-white border border-geist-gray-200 shadow-sm rounded-2xl p-8 flex flex-col items-center justify-center text-center overflow-hidden" style={{ backfaceVisibility: 'hidden' }}>
                   <div className="absolute top-4 right-4">
-                    <button type="button" onClick={(e) => { e.stopPropagation(); handlePlayAudio(); }} className="p-2.5 bg-geist-gray-100 rounded-full hover:bg-geist-gray-200 transition-colors shadow-sm">
-                      <Volume2 className="w-5 h-5 text-geist-gray-700" />
+                    <button type="button" onClick={(e) => { e.stopPropagation(); handlePlayAudio(); }} className="p-2.5 bg-[#f5f5f5] text-[#4d4d4d] rounded-full hover:bg-[#e5e5e5] hover:text-[#171717] border border-[#e5e5e5] transition-colors shadow-sm">
+                      <Volume2 className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="text-sm font-bold text-brand-navy/50 mb-auto tracking-widest uppercase mt-2">Vocabulary</div>
-                  <div className="text-4xl font-extrabold text-brand-navy mb-2 break-words w-full">{watch('frontText') || 'Từ vựng'}</div>
-                  {watch('phonetic') && <div className="text-lg font-medium text-brand-navy/70 mb-4">{watch('phonetic')}</div>}
-                  <div className="text-sm font-medium text-brand-navy/60 mt-auto">Chạm để lật thẻ</div>
+                  <div className="text-[11px] font-semibold text-[#8f8f8f] mb-auto tracking-[0.2em] uppercase mt-2">Vocabulary</div>
+                  <div className="text-4xl font-semibold tracking-tight text-[#171717] mb-2 break-words w-full">{watch('frontText') || 'Từ vựng'}</div>
+                  {watch('phonetic') && <div className="text-base font-normal text-[#4d4d4d] mb-4">{watch('phonetic')}</div>}
+                  <div className="text-xs font-medium text-[#8f8f8f] mt-auto flex items-center gap-1 opacity-60">
+                    <Wand2 className="w-3 h-3" /> Chạm để lật
+                  </div>
                 </div>
-                <div className={`absolute inset-0 brutal-card overflow-hidden ${watch('cardColor') || 'bg-brand-coral'} flex flex-col items-center justify-center text-center`} style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+                <div className={`absolute inset-0 rounded-2xl overflow-hidden ${watch('cardColor') || 'bg-geist-gray-100'} border border-black/5 shadow-sm flex flex-col items-center justify-center text-center`} style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
                   {watch('frontImageUrl') ? (
                     <>
-                      <div className="w-full h-[55%] relative border-b-2 border-black">
-                        <img src={watch('frontImageUrl')} alt="Flashcard" className="w-full h-full object-cover" />
+                      <div className="w-full h-[55%] relative border-b border-black/10">
+                        <img src={watch('frontImageUrl')} alt="Flashcard" className="w-full h-full object-cover" loading="lazy" />
                       </div>
                       <div className="w-full h-[45%] flex flex-col items-center justify-center p-4 relative">
-                        <div className="text-sm font-bold text-white/70 mb-2 tracking-widest uppercase mt-2">Meaning</div>
-                        <div className="text-2xl font-extrabold text-white mb-2 break-words w-full">{watch('backText') || 'Ý nghĩa'}</div>
-                        {watch('hint') && <div className="text-xs font-medium text-white/90 bg-white/20 px-3 py-1 rounded-full mt-auto mb-2">Gợi ý: {watch('hint')}</div>}
+                        <div className="text-[11px] font-semibold text-white/80 mb-2 tracking-[0.2em] uppercase mt-2">Meaning</div>
+                        <div className="text-2xl font-semibold tracking-tight text-white mb-2 break-words w-full">{watch('backText') || 'Ý nghĩa'}</div>
+                        {watch('hint') && <div className="text-[11px] font-medium text-white/90 bg-black/10 border border-white/20 px-3 py-1.5 rounded-full mt-auto mb-2 backdrop-blur-sm">Gợi ý: {watch('hint')}</div>}
                       </div>
                     </>
                   ) : (
                     <div className="w-full h-full p-8 flex flex-col items-center justify-center relative">
-                      <div className="text-sm font-bold text-white/70 mb-auto tracking-widest uppercase mt-2">Meaning</div>
-                      <div className="text-3xl font-extrabold text-white mb-4 break-words w-full">{watch('backText') || 'Ý nghĩa'}</div>
-                      {watch('hint') && <div className="text-sm font-medium text-white/90 bg-white/20 px-3 py-1.5 rounded-full mt-4">Gợi ý: {watch('hint')}</div>}
+                      <div className="text-[11px] font-semibold text-white/80 mb-auto tracking-[0.2em] uppercase mt-2">Meaning</div>
+                      <div className="text-3xl font-semibold tracking-tight text-white mb-2 break-words w-full">{watch('backText') || 'Ý nghĩa'}</div>
+                      <div className="mt-auto flex flex-col items-center justify-end min-h-[40px] w-full">
+                        {watch('hint') && <div className="text-[11px] font-medium text-white/90 bg-black/10 border border-white/20 px-4 py-1.5 rounded-full backdrop-blur-sm w-fit max-w-full truncate">Gợi ý: {watch('hint')}</div>}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -549,7 +676,7 @@ export function FlashcardsAdminPage() {
                     className="relative aspect-video cursor-pointer overflow-hidden rounded-md border border-geist-gray-300 hover:border-geist-blue-700 hover:ring-2 hover:ring-geist-blue-300 transition-all group"
                     onClick={() => selectPixabayImage(img.webformatURL)}
                   >
-                    <img src={img.previewURL} alt={img.tags} className="w-full h-full object-cover" />
+                    <img src={img.previewURL} alt={img.tags} className="w-full h-full object-cover" loading="lazy" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                       <span className="text-white text-xs font-medium">Chọn</span>
                     </div>

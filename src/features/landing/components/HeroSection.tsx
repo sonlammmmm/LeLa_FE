@@ -30,7 +30,7 @@ export function HeroSection({ onAction }: Props) {
                 size="large" 
                 className="h-14 px-8 text-lg font-bold brutal-shadow brutal-border brutal-pill bg-brand-coral text-white hover:bg-brand-teal transition-all hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_#000000]"
                 icon={<ArrowRight className="w-5 h-5 ml-2" />}
-                iconPosition="end"
+                iconPlacement="end"
               >
                 Bắt Đầu Ngay
               </Button>

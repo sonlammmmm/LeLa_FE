@@ -22,8 +22,13 @@ export function AuthModal({ open, onCancel, defaultView = 'login' }: AuthModalPr
   useEffect(() => {
     if (open) {
       setView(defaultView);
-      loginForm.resetFields();
-      registerForm.resetFields();
+      setTimeout(() => {
+        if (defaultView === 'login') {
+          loginForm.resetFields();
+        } else {
+          registerForm.resetFields();
+        }
+      }, 0);
     }
   }, [open, defaultView, loginForm, registerForm]);
 
@@ -83,7 +88,7 @@ export function AuthModal({ open, onCancel, defaultView = 'login' }: AuthModalPr
       open={open}
       onCancel={onCancel}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
       width={view === 'register' ? 800 : 450}
       className="brutal-modal"
       centered

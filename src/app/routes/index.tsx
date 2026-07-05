@@ -1,37 +1,45 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { LandingPage } from '../../features/landing/pages/LandingPage';
 import { ProtectedRoute } from './ProtectedRoute';
-
-import { TagsPage } from '../../features/master-data/pages/TagsPage';
-import { LanguagesPage } from '../../features/master-data/pages/LanguagesPage';
-import { UsersAdminPage } from '../../features/user-management/pages/UsersAdminPage';
-import { TransactionsAdminPage } from '../../features/subscription/pages/TransactionsAdminPage';
-import { NotificationsAdminPage } from '../../features/notifications/pages/NotificationsAdminPage';
-
-import { DecksAdminPage } from '../../features/study-content/pages/DecksAdminPage';
-import { FlashcardsAdminPage } from '../../features/study-content/pages/FlashcardsAdminPage';
-
-import { ExploreDecksPage } from '../../features/study-content/pages/ExploreDecksPage';
-import { MyDecksPage } from '../../features/study-content/pages/MyDecksPage';
-import { StudyPage } from '../../features/study-session/pages/StudyPage';
-import { QuizzesAdminPage } from '../../features/quiz/pages/QuizzesAdminPage';
-import { QuizQuestionsAdminPage } from '../../features/quiz/pages/QuizQuestionsAdminPage';
-import { QuizAttemptPage } from '../../features/quiz/pages/QuizAttemptPage';
-import { MyQuizAttemptsPage } from '../../features/quiz/pages/MyQuizAttemptsPage';
-import { LeaderboardPage } from '../../features/gamification/pages/LeaderboardPage';
-import { LearnerDashboardPage } from '../../features/dashboard/pages/LearnerDashboardPage';
-import { PricingPage } from '../../features/subscription/pages/PricingPage';
-import { AdminDashboardPage } from '../../features/dashboard/pages/AdminDashboardPage';
 import { LearnerLayout } from '../../shared/components/layout/LearnerLayout';
 import { AdminLayout } from '../../shared/components/layout/AdminLayout';
 import { LearnerThemeProvider } from '../../shared/providers/LearnerThemeProvider';
 import { ThemeProvider } from '../../shared/providers/ThemeProvider';
 
+// Lazy loading for all pages to optimize initial bundle size
+const LandingPage = lazy(() => import('../../features/landing/pages/LandingPage').then(module => ({ default: module.LandingPage })));
+const TagsPage = lazy(() => import('../../features/master-data/pages/TagsPage').then(module => ({ default: module.TagsPage })));
+const LanguagesPage = lazy(() => import('../../features/master-data/pages/LanguagesPage').then(module => ({ default: module.LanguagesPage })));
+const UsersAdminPage = lazy(() => import('../../features/user-management/pages/UsersAdminPage').then(module => ({ default: module.UsersAdminPage })));
+const TransactionsAdminPage = lazy(() => import('../../features/subscription/pages/TransactionsAdminPage').then(module => ({ default: module.TransactionsAdminPage })));
+const SubscriptionPlansAdminPage = lazy(() => import('../../features/subscription/pages/SubscriptionPlansAdminPage').then(module => ({ default: module.SubscriptionPlansAdminPage })));
+const NotificationsAdminPage = lazy(() => import('../../features/notifications/pages/NotificationsAdminPage').then(module => ({ default: module.NotificationsAdminPage })));
+const DecksAdminPage = lazy(() => import('../../features/study-content/pages/DecksAdminPage').then(module => ({ default: module.DecksAdminPage })));
+const FlashcardsAdminPage = lazy(() => import('../../features/study-content/pages/FlashcardsAdminPage').then(module => ({ default: module.FlashcardsAdminPage })));
+const ExploreDecksPage = lazy(() => import('../../features/study-content/pages/ExploreDecksPage').then(module => ({ default: module.ExploreDecksPage })));
+const MyDecksPage = lazy(() => import('../../features/study-content/pages/MyDecksPage').then(module => ({ default: module.MyDecksPage })));
+const StudyPage = lazy(() => import('../../features/study-session/pages/StudyPage').then(module => ({ default: module.StudyPage })));
+const QuizzesAdminPage = lazy(() => import('../../features/quiz/pages/QuizzesAdminPage').then(module => ({ default: module.QuizzesAdminPage })));
+const QuizQuestionsAdminPage = lazy(() => import('../../features/quiz/pages/QuizQuestionsAdminPage').then(module => ({ default: module.QuizQuestionsAdminPage })));
+const QuizAttemptPage = lazy(() => import('../../features/quiz/pages/QuizAttemptPage').then(module => ({ default: module.QuizAttemptPage })));
+const MyQuizAttemptsPage = lazy(() => import('../../features/quiz/pages/MyQuizAttemptsPage').then(module => ({ default: module.MyQuizAttemptsPage })));
+const LeaderboardPage = lazy(() => import('../../features/gamification/pages/LeaderboardPage').then(module => ({ default: module.LeaderboardPage })));
+const LearnerDashboardPage = lazy(() => import('../../features/dashboard/pages/LearnerDashboardPage').then(module => ({ default: module.LearnerDashboardPage })));
+const PricingPage = lazy(() => import('../../features/subscription/pages/PricingPage').then(module => ({ default: module.PricingPage })));
+const AdminDashboardPage = lazy(() => import('../../features/dashboard/pages/AdminDashboardPage').then(module => ({ default: module.AdminDashboardPage })));
+
 const Unauthorized = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold text-red-500">Unauthorized</div>;
+
+const PageLoader = () => (
+  <div className="min-h-[50vh] flex items-center justify-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-geist-blue-500"></div>
+  </div>
+);
 
 export function AppRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
       {/* Public routes */}
       <Route path="/" element={<LearnerThemeProvider><LandingPage /></LearnerThemeProvider>} />
       {/* Legacy auth routes redirect to home where modal can be triggered */}
@@ -63,6 +71,7 @@ export function AppRoutes() {
           <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
             <Route path="/admin/notifications" element={<NotificationsAdminPage />} />
             <Route path="/admin/transactions" element={<TransactionsAdminPage />} />
+            <Route path="/admin/subscription-plans" element={<SubscriptionPlansAdminPage />} />
             <Route path="/admin/tags" element={<TagsPage />} />
             <Route path="/admin/languages" element={<LanguagesPage />} />
           </Route>
@@ -72,6 +81,7 @@ export function AppRoutes() {
           <Route path="/admin/quizzes/:quizId/questions" element={<QuizQuestionsAdminPage />} />
         </Route>
       </Route>
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }

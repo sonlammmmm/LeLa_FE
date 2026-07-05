@@ -8,12 +8,20 @@ export type NotificationResponse = {
   message: string;
   type: string;
   isRead: boolean;
+  status: string;
+  failedAt?: string;
+  failureReason?: string;
   createdAt: string;
 };
 
 export const notificationsApi = {
   getAll: async (params?: any): Promise<ApiResponse<Page<NotificationResponse>>> => {
     const res = await apiClient.get<ApiResponse<Page<NotificationResponse>>>('/notifications', { params });
+    return res.data;
+  },
+  
+  getAllAdmin: async (params?: any): Promise<ApiResponse<Page<NotificationResponse>>> => {
+    const res = await apiClient.get<ApiResponse<Page<NotificationResponse>>>('/notifications/admin', { params });
     return res.data;
   },
   

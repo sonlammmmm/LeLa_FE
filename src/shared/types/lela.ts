@@ -76,6 +76,8 @@ export interface DeckResponse {
   viewCount: number;
   enrollmentCount: number;
   displayMode: DeckDisplayMode;
+  rejectionReason?: string;
+  isActive: boolean;
 }
 
 export interface FlashcardResponse {
@@ -129,6 +131,7 @@ export interface QuizResponse {
   shuffleOptions: boolean;
   totalQuestions: number;
   isActive: boolean;
+  passScore?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -146,6 +149,17 @@ export interface QuizQuestionResponse {
   displayOrder: number;
   isActive: boolean;
   version?: number;
+  options?: QuizQuestionOptionResponse[];
+}
+
+export interface QuizQuestionOptionResponse {
+  id: number;
+  questionId: number;
+  optionKey: string;
+  optionText: string;
+  normalizedText?: string;
+  isCorrect: boolean;
+  displayOrder: number;
 }
 
 export interface SubscriptionPlanResponse {

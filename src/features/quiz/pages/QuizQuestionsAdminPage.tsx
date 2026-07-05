@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { Plus, Edit2, Trash2, ArrowLeft } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { message, Modal as AntdModal } from 'antd'; // Keeping message for toast notifications
@@ -18,6 +18,12 @@ type FormValues = {
   questionImageUrl: string;
   explanation: string;
   isActive: boolean;
+  options: {
+    optionKey: string;
+    optionText: string;
+    isCorrect: boolean;
+    displayOrder: number;
+  }[];
 };
 
 const QUESTION_TYPE_MAP: Record<string, string> = {
@@ -33,13 +39,24 @@ export function QuizQuestionsAdminPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<QuizQuestionResponse | null>(null);
   
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormValues>({
     defaultValues: {
       questionType: 'MULTIPLE_CHOICE',
       points: 1,
       displayOrder: 0,
       isActive: true,
+      options: [
+        { optionKey: 'A', optionText: '', isCorrect: true, displayOrder: 1 },
+        { optionKey: 'B', optionText: '', isCorrect: false, displayOrder: 2 },
+        { optionKey: 'C', optionText: '', isCorrect: false, displayOrder: 3 },
+        { optionKey: 'D', optionText: '', isCorrect: false, displayOrder: 4 }
+      ]
     }
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'options'
   });
 
   // The BE doesn't seem to have getByQuizId yet, so we filter getAll client-side or assume BE handles it via params
@@ -82,13 +99,23 @@ export function QuizQuestionsAdminPage() {
         displayOrder: question.displayOrder,
         questionImageUrl: question.questionImageUrl || '',
         explanation: question.explanation || '',
-        isActive: question.isActive
+        isActive: question.isActive,
+        options: question.options?.length ? question.options : [
+          { optionKey: 'A', optionText: '', isCorrect: true, displayOrder: 1 },
+          { optionKey: 'B', optionText: '', isCorrect: false, displayOrder: 2 }
+        ]
       });
     } else {
       setEditingQuestion(null);
       reset({
         questionText: '', questionImageUrl: '', explanation: '',
-        questionType: 'MULTIPLE_CHOICE', points: 1, displayOrder: 0, isActive: true
+        questionType: 'MULTIPLE_CHOICE', points: 1, displayOrder: 0, isActive: true,
+        options: [
+          { optionKey: 'A', optionText: '', isCorrect: true, displayOrder: 1 },
+          { optionKey: 'B', optionText: '', isCorrect: false, displayOrder: 2 },
+          { optionKey: 'C', optionText: '', isCorrect: false, displayOrder: 3 },
+          { optionKey: 'D', optionText: '', isCorrect: false, displayOrder: 4 }
+        ]
       });
     }
     setIsModalOpen(true);
@@ -182,6 +209,17 @@ export function QuizQuestionsAdminPage() {
         title={editingQuestion ? 'Chỉnh sửa câu hỏi' : 'Thêm câu hỏi'}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        showCloseButton={false}
+        headerActions={
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)}>
+              Hủy
+            </Button>
+            <Button size="sm" onClick={handleSubmit(onSubmit)} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Đang lưu...' : 'Lưu'}
+            </Button>
+          </div>
+        }
       >
         <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
           <div className="space-y-2">
@@ -199,7 +237,7 @@ export function QuizQuestionsAdminPage() {
               <label className="text-sm font-medium text-geist-gray-1000">Loại câu hỏi</label>
               <select 
                 {...register('questionType', { required: true })}
-                className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
+                className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-geist-bg-100 px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
               >
                 <option value="MULTIPLE_CHOICE">Trắc nghiệm</option>
                 <option value="TRUE_FALSE">Đúng / Sai</option>
@@ -243,13 +281,53 @@ export function QuizQuestionsAdminPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-8">
-            <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
-              Hủy
-            </Button>
-            <Button type="submit" disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? 'Đang lưu...' : 'Lưu'}
-            </Button>
+          <div className="pt-4 border-t border-geist-gray-300">
+            <div className="flex justify-between items-center mb-4">
+              <label className="text-sm font-medium text-geist-gray-1000">Các lựa chọn đáp án</label>
+              <Button type="button" variant="outline" size="sm" onClick={() => append({ optionKey: '', optionText: '', isCorrect: false, displayOrder: fields.length + 1 })}>
+                <Plus className="w-4 h-4 mr-1" /> Thêm đáp án
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {fields.map((field, index) => (
+                <div key={field.id} className="flex items-start gap-3 p-3 border border-geist-gray-300 rounded-lg bg-geist-bg-50">
+                  <div className="pt-2">
+                    <input
+                      type="radio"
+                      className="w-4 h-4 text-geist-blue-700 border-geist-gray-400 focus:ring-geist-blue-700 bg-transparent"
+                      {...register(`options.${index}.isCorrect` as const)}
+                      value="true"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="A, B, C..." 
+                        className="w-16 text-center font-mono" 
+                        {...register(`options.${index}.optionKey` as const, { required: true })} 
+                      />
+                      <Input 
+                        placeholder="Nội dung đáp án" 
+                        className="flex-1" 
+                        {...register(`options.${index}.optionText` as const, { required: true })} 
+                      />
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-geist-gray-500 hover:text-geist-red-800"
+                        onClick={() => remove(index)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {fields.length === 0 && (
+                <p className="text-sm text-geist-gray-600 text-center py-4">Chưa có đáp án nào.</p>
+              )}
+            </div>
           </div>
         </form>
       </Modal>

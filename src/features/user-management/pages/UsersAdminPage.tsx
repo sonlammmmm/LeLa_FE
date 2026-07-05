@@ -100,6 +100,18 @@ export function UsersAdminPage() {
     onError: () => message.error('Không thể thu hồi quyền')
   });
 
+  // Toggle Status Mutation
+  const toggleStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: 'ACTIVE' | 'SUSPENDED' }) => {
+      return apiClient.patch(`/users/${id}`, { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      message.success('Cập nhật trạng thái thành công');
+    },
+    onError: () => message.error('Không thể cập nhật trạng thái')
+  });
+
   const toggleStatus = (user: UserResponse) => {
     if (user.id == (currentUser?.id as any)) {
       message.error("Bạn không thể khóa chính mình");
@@ -107,6 +119,8 @@ export function UsersAdminPage() {
     }
     const isActive = user.status === 'ACTIVE';
     const action = isActive ? 'Khóa' : 'Mở khóa';
+    const nextStatus = isActive ? 'SUSPENDED' : 'ACTIVE';
+    
     AntdModal.confirm({
       title: `Xác nhận ${action.toLowerCase()}`,
       content: `Bạn có chắc chắn muốn ${action.toLowerCase()} tài khoản ${user.email}?`,
@@ -114,8 +128,7 @@ export function UsersAdminPage() {
       cancelText: 'Hủy',
       okButtonProps: { danger: isActive },
       onOk: () => {
-        // Mock success, replace with actual status patch
-        message.success(`${action} tài khoản thành công`);
+        toggleStatusMutation.mutate({ id: user.id, status: nextStatus });
       },
     });
   };
@@ -301,11 +314,7 @@ export function UsersAdminPage() {
             </div>
           )}
           
-          <div className="flex justify-end gap-3 mt-6">
-            <Button onClick={() => setIsRoleModalOpen(false)}>
-              Đóng
-            </Button>
-          </div>
+          
         </div>
       </Modal>
     </div>

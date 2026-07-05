@@ -3,7 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Plus, Edit2, Trash2, Settings2 } from 'lucide-react';
 import { quizzesApi } from '../api/quizzes.api';
+import { decksApi } from '../../study-content/api/decks.api';
 import type { QuizResponse } from '../../../shared/types/lela';
+import { Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { message, Modal as AntdModal } from 'antd'; // Keeping message for toast notifications
 import { Button } from '../../../shared/components/ui/Button';
@@ -17,6 +19,7 @@ type FormValues = {
   description: string;
   quizType: 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'FILL_BLANK' | 'MIXED';
   timeLimitSeconds: number | null;
+  passScore: number;
   maxAttempts: number;
   shuffleQuestions: boolean;
   isActive: boolean;
@@ -49,6 +52,11 @@ export function QuizzesAdminPage() {
     queryFn: () => quizzesApi.getAll({ size: 50 }),
   });
 
+  const { data: decksData } = useQuery({
+    queryKey: ['admin-decks'],
+    queryFn: () => decksApi.getAll({ size: 100 }),
+  });
+
   const saveMutation = useMutation({
     mutationFn: (values: FormValues) => 
       editingQuiz 
@@ -73,6 +81,25 @@ export function QuizzesAdminPage() {
     onError: (err: any) => message.error(err.response?.data?.message || 'Có lỗi xảy ra'),
   });
 
+  const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const json = JSON.parse(e.target?.result as string);
+        // We reuse create mutation for bulk import since backend create was updated to cascade
+        saveMutation.mutate(json);
+      } catch (err) {
+        message.error('File JSON không hợp lệ');
+      }
+    };
+    reader.readAsText(file);
+    // clear input
+    e.target.value = '';
+  };
+
   const openModal = (quiz?: QuizResponse) => {
     if (quiz) {
       setEditingQuiz(quiz);
@@ -83,6 +110,7 @@ export function QuizzesAdminPage() {
         description: quiz.description || '',
         quizType: quiz.quizType as any,
         timeLimitSeconds: quiz.timeLimitSeconds,
+        passScore: quiz.passScore ?? 80,
         maxAttempts: quiz.maxAttempts,
         shuffleQuestions: quiz.shuffleQuestions,
         isActive: quiz.isActive
@@ -91,7 +119,7 @@ export function QuizzesAdminPage() {
       setEditingQuiz(null);
       reset({
         quizCode: '', deckId: undefined, title: '', description: '',
-        quizType: 'MULTIPLE_CHOICE', maxAttempts: 3, shuffleQuestions: true, isActive: true, timeLimitSeconds: null
+        quizType: 'MULTIPLE_CHOICE', maxAttempts: 3, shuffleQuestions: true, isActive: true, timeLimitSeconds: null, passScore: 80
       });
     }
     setIsModalOpen(true);
@@ -100,6 +128,7 @@ export function QuizzesAdminPage() {
   const onSubmit = (values: FormValues) => {
     values.deckId = Number(values.deckId);
     values.maxAttempts = Number(values.maxAttempts);
+    values.passScore = Number(values.passScore);
     if (values.timeLimitSeconds) values.timeLimitSeconds = Number(values.timeLimitSeconds);
     saveMutation.mutate(values);
   };
@@ -111,10 +140,25 @@ export function QuizzesAdminPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-geist-gray-1000">Bài kiểm tra</h1>
           <p className="text-sm text-geist-gray-700 mt-1">Quản lý bài kiểm tra và bài tập</p>
         </div>
-        <Button onClick={() => openModal()}>
-          <Plus className="w-4 h-4 mr-2" />
-          Thêm bài kiểm tra
-        </Button>
+        <div className="flex gap-2">
+          <div>
+            <input 
+              type="file" 
+              accept=".json" 
+              id="import-quiz-json" 
+              className="hidden" 
+              onChange={handleImportJson} 
+            />
+            <Button variant="outline" onClick={() => document.getElementById('import-quiz-json')?.click()}>
+              <Upload className="w-4 h-4 mr-2" />
+              Import JSON
+            </Button>
+          </div>
+          <Button onClick={() => openModal()}>
+            <Plus className="w-4 h-4 mr-2" />
+            Thêm bài kiểm tra
+          </Button>
+        </div>
       </div>
 
       <div className="border border-geist-gray-400 rounded-lg bg-geist-bg-100 overflow-hidden shadow-sm">
@@ -138,7 +182,9 @@ export function QuizzesAdminPage() {
                   <td className="px-4 py-3 font-mono text-geist-gray-900">{quiz.quizCode}</td>
                   <td className="px-4 py-3 text-geist-gray-1000 font-medium">{quiz.title}</td>
                   <td className="px-4 py-3 text-geist-gray-1000">{QUIZ_TYPE_MAP[quiz.quizType] || quiz.quizType}</td>
-                  <td className="px-4 py-3 font-mono text-geist-gray-700">{quiz.deckId}</td>
+                  <td className="px-4 py-3 text-geist-gray-1000">
+                    {decksData?.content?.find((d: any) => d.id === quiz.deckId)?.title || quiz.deckId}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       quiz.isActive ? 'bg-geist-success-100 text-geist-success-800' : 'bg-geist-gray-200 text-geist-gray-800'
@@ -189,6 +235,17 @@ export function QuizzesAdminPage() {
         title={editingQuiz ? 'Chỉnh sửa bài kiểm tra' : 'Thêm bài kiểm tra'}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        showCloseButton={false}
+        headerActions={
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setIsModalOpen(false)}>
+              Hủy
+            </Button>
+            <Button size="sm" onClick={handleSubmit(onSubmit)} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Đang lưu...' : 'Lưu'}
+            </Button>
+          </div>
+        }
       >
         <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -198,8 +255,16 @@ export function QuizzesAdminPage() {
               {errors.quizCode && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">ID Bộ thẻ</label>
-              <Input type="number" {...register('deckId', { required: true })} />
+              <label className="text-sm font-medium text-geist-gray-1000">Bộ thẻ (Deck)</label>
+              <select 
+                {...register('deckId', { required: true })}
+                className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-geist-bg-100 px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
+              >
+                <option value="">-- Chọn bộ thẻ --</option>
+                {decksData?.content?.map((deck: any) => (
+                  <option key={deck.id} value={deck.id}>{deck.title} (ID: {deck.id})</option>
+                ))}
+              </select>
               {errors.deckId && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
             </div>
           </div>
@@ -224,7 +289,7 @@ export function QuizzesAdminPage() {
               <label className="text-sm font-medium text-geist-gray-1000">Loại bài kiểm tra</label>
               <select 
                 {...register('quizType', { required: true })}
-                className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
+                className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-geist-bg-100 px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
               >
                 <option value="MULTIPLE_CHOICE">Trắc nghiệm</option>
                 <option value="TRUE_FALSE">Đúng / Sai</option>
@@ -232,12 +297,17 @@ export function QuizzesAdminPage() {
                 <option value="MIXED">Hỗn hợp</option>
               </select>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">Thời gian giới hạn (giây)</label>
-              <Input type="number" {...register('timeLimitSeconds')} placeholder="Tùy chọn" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-geist-gray-1000">Thời gian giới hạn (giây)</label>
+                <Input type="number" {...register('timeLimitSeconds')} placeholder="Tùy chọn" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-geist-gray-1000">Điểm đỗ (0-100)</label>
+                <Input type="number" {...register('passScore')} placeholder="80" min="0" max="100" />
+              </div>
             </div>
-          </div>
-
+            </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-geist-gray-1000">Số lần làm tối đa</label>
@@ -265,14 +335,7 @@ export function QuizzesAdminPage() {
             </div>
           </div>
           
-          <div className="flex justify-end gap-3 mt-8">
-            <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
-              Hủy
-            </Button>
-            <Button type="submit" disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? 'Đang lưu...' : 'Lưu'}
-            </Button>
-          </div>
+          
         </form>
       </Modal>
     </div>
