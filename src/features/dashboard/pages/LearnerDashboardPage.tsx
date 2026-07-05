@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button, Spin, Tooltip } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { dailyActivitiesApi } from '../../gamification/api/daily-activities.api';
+import { srsReviewsApi } from '../../study-session/api/srs-reviews.api';
 
 export function LearnerDashboardPage() {
   const navigate = useNavigate();
@@ -21,8 +22,16 @@ export function LearnerDashboardPage() {
     queryFn: () => dailyActivitiesApi.getHistory({ startDate, endDate }),
   });
 
+  const { data: srsStats } = useQuery({
+    queryKey: ['srs-statistics'],
+    queryFn: () => srsReviewsApi.getStatistics(),
+  });
+
   const xp = activityData?.data?.xpEarned || 0;
   const cardsReviewed = activityData?.data?.cardsReviewed || 0;
+  
+  // Tạm tính tỷ lệ Mastered (Giả lập nếu BE chưa trả về Mastered %)
+  const masteredPercent = srsStats?.data?.masteryPercentage || 0;
 
   // Compute Streak & Heatmap Map
   let streak = 0;
@@ -72,7 +81,7 @@ export function LearnerDashboardPage() {
       <div className="max-w-7xl mx-auto">
         <h1 className="text-4xl font-black uppercase tracking-tighter text-[#1D2A3A] mb-8">Tổng quan học tập</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="brutal-card bg-white p-6 flex flex-col items-center justify-center text-center">
             <span className="text-gray-500 font-bold uppercase mb-2">XP Hôm Nay</span>
             <span className="text-5xl font-black text-[#F05A4A]">{xp}</span>
@@ -80,6 +89,10 @@ export function LearnerDashboardPage() {
           <div className="brutal-card bg-white p-6 flex flex-col items-center justify-center text-center">
             <span className="text-gray-500 font-bold uppercase mb-2">Thẻ đã ôn</span>
             <span className="text-5xl font-black text-[#2A8B9D]">{cardsReviewed}</span>
+          </div>
+          <div className="brutal-card bg-white p-6 flex flex-col items-center justify-center text-center">
+            <span className="text-gray-500 font-bold uppercase mb-2">Độ thuần thục</span>
+            <span className="text-5xl font-black text-[#2A8B9D]">{masteredPercent}%</span>
           </div>
           <div className="brutal-card bg-[#FFD700] p-6 flex flex-col items-center justify-center text-center">
             <span className="text-gray-800 font-bold uppercase mb-2">Chuỗi ngày (Streak)</span>

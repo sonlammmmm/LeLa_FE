@@ -6,6 +6,7 @@ import { TagsPage } from '../../features/master-data/pages/TagsPage';
 import { LanguagesPage } from '../../features/master-data/pages/LanguagesPage';
 import { UsersAdminPage } from '../../features/user-management/pages/UsersAdminPage';
 import { TransactionsAdminPage } from '../../features/subscription/pages/TransactionsAdminPage';
+import { NotificationsAdminPage } from '../../features/notifications/pages/NotificationsAdminPage';
 
 import { DecksAdminPage } from '../../features/study-content/pages/DecksAdminPage';
 import { FlashcardsAdminPage } from '../../features/study-content/pages/FlashcardsAdminPage';
@@ -56,8 +57,11 @@ export function AppRoutes() {
       <Route element={<ThemeProvider><AdminLayout /></ThemeProvider>}>
         <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'CONTENT_CREATOR', 'MODERATOR']} />}>
           <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-          <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+          <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'MODERATOR']} />}>
             <Route path="/admin/users" element={<UsersAdminPage />} />
+          </Route>
+          <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+            <Route path="/admin/notifications" element={<NotificationsAdminPage />} />
             <Route path="/admin/transactions" element={<TransactionsAdminPage />} />
             <Route path="/admin/tags" element={<TagsPage />} />
             <Route path="/admin/languages" element={<LanguagesPage />} />

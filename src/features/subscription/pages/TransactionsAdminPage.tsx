@@ -83,7 +83,7 @@ export function TransactionsAdminPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-geist-gray-300 overflow-hidden shadow-sm">
+      <div className="bg-geist-bg-100 rounded-lg border border-geist-gray-300 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-geist-gray-100 text-geist-gray-700 font-medium border-b border-geist-gray-300">

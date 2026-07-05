@@ -56,6 +56,7 @@ export interface TagResponse {
 
 export type DeckDifficulty = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
 export type DeckVisibility = 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
+export type DeckDisplayMode = 'FRONT' | 'BACK' | 'RANDOM';
 
 export interface DeckResponse {
   id: number;
@@ -74,6 +75,7 @@ export interface DeckResponse {
   totalCards: number;
   viewCount: number;
   enrollmentCount: number;
+  displayMode: DeckDisplayMode;
 }
 
 export interface FlashcardResponse {
@@ -91,6 +93,7 @@ export interface FlashcardResponse {
   backAudioUrl?: string;
   cardOrder: number;
   isActive: boolean;
+  cardColor?: string;
   tagIds: number[];
 }
 

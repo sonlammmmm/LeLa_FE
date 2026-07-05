@@ -1,7 +1,7 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../providers/AuthProvider';
 import { useTheme } from '../../providers/ThemeProvider';
-import { LogOut, LayoutDashboard, Tags, Languages, Book, HelpCircle, Moon, Sun, Monitor, Users, CreditCard } from 'lucide-react';
+import { LogOut, LayoutDashboard, Tags, Languages, Book, HelpCircle, Moon, Sun, Monitor, Users, CreditCard, Bell } from 'lucide-react';
 import type { UserRole } from '../../types/lela';
 
 export function AdminLayout() {
@@ -18,11 +18,12 @@ export function AdminLayout() {
   type NavItem = { name: string; path: string; icon: any; roles: UserRole[] };
   const navItems: NavItem[] = [
     { name: 'Bảng điều khiển', path: '/admin/dashboard', icon: LayoutDashboard, roles: ['ADMIN'] },
-    { name: 'Người dùng', path: '/admin/users', icon: Users, roles: ['ADMIN'] },
+    { name: 'Gửi thông báo', path: '/admin/notifications', icon: Bell, roles: ['ADMIN'] },
+    { name: 'Người dùng', path: '/admin/users', icon: Users, roles: ['ADMIN', 'MODERATOR'] },
     { name: 'Giao dịch', path: '/admin/transactions', icon: CreditCard, roles: ['ADMIN'] },
     { name: 'Thẻ (Tags)', path: '/admin/tags', icon: Tags, roles: ['ADMIN'] },
     { name: 'Ngôn ngữ', path: '/admin/languages', icon: Languages, roles: ['ADMIN'] },
-    { name: 'Bộ thẻ (Decks)', path: '/admin/decks', icon: Book, roles: ['ADMIN', 'CONTENT_CREATOR'] },
+    { name: 'Bộ thẻ (Decks)', path: '/admin/decks', icon: Book, roles: ['ADMIN', 'CONTENT_CREATOR', 'MODERATOR'] },
     { name: 'Bài kiểm tra', path: '/admin/quizzes', icon: HelpCircle, roles: ['ADMIN', 'CONTENT_CREATOR'] },
   ];
 

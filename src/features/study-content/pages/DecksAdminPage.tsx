@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { Plus, Edit2, Trash2, Settings2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Settings2, Image as ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { message, Modal as AntdModal } from 'antd'; // Keeping message for toast notifications
 import { decksApi } from '../api/decks.api';
@@ -10,6 +10,7 @@ import type { DeckResponse } from '../../../shared/types/lela';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input } from '../../../shared/components/ui/Input';
 import { Modal } from '../../../shared/components/ui/Modal';
+import { useAuth } from '../../../shared/providers/AuthProvider';
 
 type FormValues = {
   title: string;
@@ -19,6 +20,7 @@ type FormValues = {
   difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
   visibility: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
   coverImageUrl: string;
+  displayMode: 'FRONT' | 'BACK' | 'RANDOM';
 };
 
 const DIFFICULTY_MAP: Record<string, string> = {
@@ -36,11 +38,16 @@ const STATUS_MAP: Record<string, string> = {
 export function DecksAdminPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { hasRole } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDeck, setEditingDeck] = useState<DeckResponse | null>(null);
+  const [isPixabayModalOpen, setIsPixabayModalOpen] = useState(false);
+  const [pixabayQuery, setPixabayQuery] = useState('');
+  const [pixabayResults, setPixabayResults] = useState<any[]>([]);
+  const [isPixabayLoading, setIsPixabayLoading] = useState(false);
   
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
-    defaultValues: { difficulty: 'BEGINNER', visibility: 'PUBLIC' }
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormValues>({
+    defaultValues: { difficulty: 'BEGINNER', visibility: 'PUBLIC', displayMode: 'RANDOM' }
   });
 
   const { data: decksData, isLoading } = useQuery({
@@ -65,7 +72,14 @@ export function DecksAdminPage() {
     },
     onError: (err: any) => message.error(err.response?.data?.message || 'Có lỗi xảy ra'),
   });
-
+  const quickUpdateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<FormValues> }) => decksApi.update(id, data),
+    onSuccess: () => {
+      message.success('Cập nhật thành công');
+      queryClient.invalidateQueries({ queryKey: ['decks-admin'] });
+    },
+    onError: () => message.error('Có lỗi xảy ra khi cập nhật'),
+  });
   const deleteMutation = useMutation({
     mutationFn: (id: number) => decksApi.delete(id),
     onSuccess: () => {
@@ -73,6 +87,50 @@ export function DecksAdminPage() {
       queryClient.invalidateQueries({ queryKey: ['decks-admin'] });
     },
   });
+
+  const searchPixabayApi = async (query: string) => {
+    if (!query) return;
+    const apiKey = import.meta.env.VITE_PIXABAY_KEY;
+    if (!apiKey) {
+      message.error('Chưa cấu hình API Key cho Pixabay trong file .env');
+      return;
+    }
+
+    setIsPixabayLoading(true);
+    try {
+      const res = await fetch(`https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(query)}&image_type=photo&orientation=horizontal&per_page=12`);
+      const data = await res.json();
+      setPixabayResults(data.hits || []);
+    } catch (err) {
+      message.error('Lỗi khi tìm ảnh');
+    } finally {
+      setIsPixabayLoading(false);
+    }
+  };
+
+  const handleSearchPixabay = async (e: React.FormEvent) => {
+    e.preventDefault();
+    searchPixabayApi(pixabayQuery);
+  };
+
+  const openPixabayModal = () => {
+    const titleValue = watch('title');
+    setIsPixabayModalOpen(true);
+    if (titleValue) {
+      setPixabayQuery(titleValue);
+      searchPixabayApi(titleValue);
+    } else {
+      setPixabayQuery('');
+      setPixabayResults([]);
+    }
+  };
+
+  const selectPixabayImage = (url: string) => {
+    setValue('coverImageUrl', url);
+    setIsPixabayModalOpen(false);
+    setPixabayQuery('');
+    setPixabayResults([]);
+  };
 
   const openModal = (deck?: DeckResponse) => {
     if (deck) {
@@ -84,11 +142,12 @@ export function DecksAdminPage() {
         category: deck.category || '',
         difficulty: deck.difficulty as any,
         visibility: deck.visibility as any,
-        coverImageUrl: deck.coverImageUrl || ''
+        coverImageUrl: deck.coverImageUrl || '',
+        displayMode: deck.displayMode || 'RANDOM'
       });
     } else {
       setEditingDeck(null);
-      reset({ difficulty: 'BEGINNER', visibility: 'PUBLIC', languageId: undefined });
+      reset({ difficulty: 'BEGINNER', visibility: 'PUBLIC', languageId: undefined, displayMode: 'RANDOM' });
     }
     setIsModalOpen(true);
   };
@@ -123,6 +182,7 @@ export function DecksAdminPage() {
                 <th className="px-4 py-3">Độ khó</th>
                 <th className="px-4 py-3">Trạng thái</th>
                 <th className="px-4 py-3 text-center">Số thẻ</th>
+                <th className="px-4 py-3">Hiển thị thẻ</th>
                 <th className="px-4 py-3 text-right">Hành động</th>
               </tr>
             </thead>
@@ -148,6 +208,18 @@ export function DecksAdminPage() {
                   </td>
                   <td className="px-4 py-3 text-center font-mono font-medium">{deck.totalCards || 0}</td>
                   <td className="px-4 py-3">
+                    <select
+                      value={deck.displayMode || 'RANDOM'}
+                      onChange={(e) => quickUpdateMutation.mutate({ id: deck.id, data: { displayMode: e.target.value as any } })}
+                      disabled={quickUpdateMutation.isPending}
+                      className="h-7 text-xs rounded border border-geist-gray-300 bg-geist-bg-100 px-2 py-0 focus:outline-none focus:ring-1 focus:ring-geist-blue-700"
+                    >
+                      <option value="FRONT">Từ vựng</option>
+                      <option value="BACK">Ý nghĩa</option>
+                      <option value="RANDOM">Ngẫu nhiên</option>
+                    </select>
+                  </td>
+                  <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
                       <Button variant="outline" size="sm" onClick={() => navigate(`/admin/decks/${deck.id}/flashcards`)}>
                         <Settings2 className="w-3.5 h-3.5 mr-1" />
@@ -161,6 +233,7 @@ export function DecksAdminPage() {
                         size="icon" 
                         className="text-geist-red-800 hover:text-geist-red-900 hover:bg-geist-red-100"
                         title="Xóa"
+                        disabled={!hasRole(['ADMIN', 'CONTENT_CREATOR'])}
                         onClick={() => {
                           AntdModal.confirm({
                             title: 'Xác nhận xóa',
@@ -190,6 +263,7 @@ export function DecksAdminPage() {
         title={editingDeck ? 'Chỉnh sửa bộ thẻ' : 'Thêm bộ thẻ'}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        className="max-w-4xl"
       >
         <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
           <div className="space-y-2">
@@ -202,7 +276,7 @@ export function DecksAdminPage() {
             <label className="text-sm font-medium text-geist-gray-1000">Mô tả</label>
             <textarea 
               {...register('description')} 
-              className="flex w-full rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 placeholder:text-geist-gray-600 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
+              className="flex w-full resize-none rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 placeholder:text-geist-gray-600 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
               rows={3}
             />
           </div>
@@ -255,7 +329,30 @@ export function DecksAdminPage() {
           
           <div className="space-y-2">
             <label className="text-sm font-medium text-geist-gray-1000">Đường dẫn ảnh bìa</label>
-            <Input {...register('coverImageUrl')} placeholder="https://..." />
+            <div className="flex gap-2">
+              <Input {...register('coverImageUrl')} placeholder="https://..." className="flex-1" />
+              <Button type="button" variant="outline" onClick={openPixabayModal} className="px-3 flex items-center gap-2" title="Tìm ảnh trên Pixabay">
+                <ImageIcon className="w-4 h-4 text-geist-gray-700" />
+              </Button>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-geist-gray-1000">Chế độ hiển thị thẻ</label>
+            <div className="flex gap-4 p-1">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" value="FRONT" {...register('displayMode')} className="w-4 h-4 text-geist-blue-700 border-geist-gray-400 focus:ring-geist-blue-700 bg-transparent" />
+                <span className="text-sm text-geist-gray-1000">Mặt trước (Từ vựng)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" value="BACK" {...register('displayMode')} className="w-4 h-4 text-geist-blue-700 border-geist-gray-400 focus:ring-geist-blue-700 bg-transparent" />
+                <span className="text-sm text-geist-gray-1000">Mặt sau (Ý nghĩa)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" value="RANDOM" {...register('displayMode')} className="w-4 h-4 text-geist-blue-700 border-geist-gray-400 focus:ring-geist-blue-700 bg-transparent" />
+                <span className="text-sm text-geist-gray-1000">Ngẫu nhiên</span>
+              </label>
+            </div>
           </div>
           
           <div className="flex justify-end gap-3 mt-8">
@@ -267,6 +364,56 @@ export function DecksAdminPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        title="Tìm ảnh trên Pixabay"
+        isOpen={isPixabayModalOpen}
+        onClose={() => setIsPixabayModalOpen(false)}
+        className="max-w-4xl"
+      >
+        <div className="mt-4">
+          <form onSubmit={handleSearchPixabay} className="flex gap-2 mb-6">
+            <Input 
+              value={pixabayQuery}
+              onChange={(e) => setPixabayQuery(e.target.value)}
+              placeholder="Nhập từ khóa tìm kiếm..."
+              className="flex-1"
+              autoFocus
+            />
+            <Button type="submit" disabled={isPixabayLoading}>
+              Tìm kiếm
+            </Button>
+          </form>
+
+          {isPixabayLoading ? (
+            <div className="text-center py-10 text-geist-gray-600">Đang tìm ảnh...</div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto p-1">
+              {pixabayResults.map((img: any) => (
+                <div 
+                  key={img.id} 
+                  className="cursor-pointer brutal-card overflow-hidden hover:-translate-y-1 transition-transform group relative"
+                  onClick={() => selectPixabayImage(img.webformatURL)}
+                >
+                  <img 
+                    src={img.webformatURL} 
+                    alt={img.tags} 
+                    className="w-full h-32 object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <span className="text-white font-medium text-sm">Chọn ảnh</span>
+                  </div>
+                </div>
+              ))}
+              {pixabayResults.length === 0 && pixabayQuery && (
+                <div className="col-span-full text-center py-10 text-geist-gray-600">
+                  Không tìm thấy ảnh nào cho "{pixabayQuery}"
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </Modal>
     </div>
   );

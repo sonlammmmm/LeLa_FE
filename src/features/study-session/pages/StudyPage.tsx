@@ -4,7 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Button, Skeleton } from 'antd';
 import { CloudServerOutlined, DisconnectOutlined } from '@ant-design/icons';
 import { flashcardsApi } from '../../study-content/api/flashcards.api';
-// import { srsReviewsApi } from '../api/srs-reviews.api'; // To be integrated
+import { srsReviewsApi } from '../api/srs-reviews.api';
+import { motion } from 'motion/react';
 
 export function StudyPage() {
   const { deckId } = useParams<{ deckId: string }>();
@@ -37,10 +38,23 @@ export function StudyPage() {
 
   const currentCard = cards[currentIndex];
 
-  const handleNext = (rating: number) => {
-    // Here we would call srsReviewsApi.reviewCard({ cardId: currentCard.id, rating, ... })
-    // In offline mode, we might want to queue this in localStorage to sync later.
-    console.log('Rated', rating);
+  const handleNext = async (rating: number) => {
+    try {
+      if (!isOffline) {
+        await srsReviewsApi.reviewCard({
+          cardId: currentCard.id,
+          rating: rating
+        });
+      } else {
+        // Queue for sync later
+        const queueStr = localStorage.getItem('lela_offline_srs_queue') || '[]';
+        const queue = JSON.parse(queueStr);
+        queue.push({ cardId: currentCard.id, rating, date: new Date().toISOString() });
+        localStorage.setItem('lela_offline_srs_queue', JSON.stringify(queue));
+      }
+    } catch (e) {
+      console.error('Failed to save SRS review', e);
+    }
     
     if (currentIndex < cards.length - 1) {
       setCurrentIndex(prev => prev + 1);
@@ -87,19 +101,34 @@ export function StudyPage() {
           </div>
         </div>
 
-        <div 
-          className="brutal-card bg-white min-h-[400px] flex flex-col items-center justify-center p-8 mb-8 cursor-pointer relative border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1"
-          onClick={() => !showBack && setShowBack(true)}
-        >
-          {/* FRONT */}
-          <div className="text-5xl font-black text-center mb-4 text-[#1D2A3A]">{currentCard.frontText}</div>
-          {currentCard.phonetic && (
-            <div className="text-2xl font-bold text-gray-500 mb-4 bg-gray-100 px-4 py-1 border-[3px] border-black">/{currentCard.phonetic}/</div>
-          )}
+        <div className="relative min-h-[400px] mb-8" style={{ perspective: 1000 }}>
+          <motion.div 
+            className="w-full h-full relative"
+            style={{ transformStyle: 'preserve-3d' }}
+            initial={false}
+            animate={{ rotateX: showBack ? 180 : 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+            onClick={() => !showBack && setShowBack(true)}
+          >
+            {/* FRONT */}
+            <div 
+              className="absolute inset-0 brutal-card bg-white flex flex-col items-center justify-center p-8 cursor-pointer border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-transform"
+              style={{ backfaceVisibility: 'hidden' }}
+            >
+              <div className="text-5xl font-black text-center mb-4 text-[#1D2A3A]">{currentCard.frontText}</div>
+              {currentCard.phonetic && (
+                <div className="text-2xl font-bold text-gray-500 mb-4 bg-gray-100 px-4 py-1 border-[3px] border-black">/{currentCard.phonetic}/</div>
+              )}
+              <div className="absolute bottom-6 bg-[#1D2A3A] text-white px-6 py-2 border-[3px] border-black font-black uppercase text-sm tracking-widest animate-pulse">
+                [ NHẤN ĐỂ LẬT THẺ ]
+              </div>
+            </div>
 
-          {/* BACK */}
-          {showBack ? (
-            <div className="mt-8 pt-8 border-t-[4px] border-black w-full flex flex-col items-center animate-fade-in">
+            {/* BACK */}
+            <div 
+              className="absolute inset-0 brutal-card bg-white flex flex-col items-center justify-center p-8 border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
+              style={{ backfaceVisibility: 'hidden', transform: 'rotateX(180deg)' }}
+            >
               <div className="text-4xl font-black text-[#2A8B9D] mb-4 text-center">{currentCard.backText}</div>
               {currentCard.exampleText && (
                 <div className="text-xl italic font-medium text-gray-700 text-center bg-[#F4F3EE] p-4 border-[3px] border-black mt-2">
@@ -107,11 +136,7 @@ export function StudyPage() {
                 </div>
               )}
             </div>
-          ) : (
-            <div className="absolute bottom-6 bg-[#1D2A3A] text-white px-6 py-2 border-[3px] border-black font-black uppercase text-sm tracking-widest animate-pulse">
-              [ NHẤN ĐỂ LẬT THẺ ]
-            </div>
-          )}
+          </motion.div>
         </div>
 
         {showBack && (

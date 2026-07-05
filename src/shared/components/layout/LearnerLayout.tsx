@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Outlet, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../providers/AuthProvider';
-import { Button, Dropdown } from 'antd';
+import { Button, Dropdown, Badge, Popover, Spin } from 'antd';
+import { Bell } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { notificationsApi } from '../../../features/notifications/api/notifications.api';
+import bubblePopSound from '../../../assets/sounds/bubble-pop.mp3';
 
 export function LearnerLayout() {
   const { user, logout, hasRole } = useAuth();
@@ -11,6 +15,76 @@ export function LearnerLayout() {
     logout();
     navigate('/login');
   };
+
+  useEffect(() => {
+    const audio = new Audio(bubblePopSound);
+    audio.load();
+
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Phát âm thanh nếu click vào button, thẻ a, hoặc các phần tử có role="button"
+      if (
+        target.closest('button') || 
+        target.closest('[role="button"]') || 
+        target.closest('a') || 
+        target.tagName === 'BUTTON'
+      ) {
+        const sound = audio.cloneNode() as HTMLAudioElement;
+        sound.volume = 0.5;
+        sound.play().catch(() => {
+          // Bỏ qua lỗi play bị block bởi trình duyệt
+        });
+      }
+    };
+
+    document.addEventListener('click', handleGlobalClick);
+    return () => document.removeEventListener('click', handleGlobalClick);
+  }, []);
+
+  const queryClient = useQueryClient();
+  const { data: notificationsData, isLoading: isNotifLoading } = useQuery({
+    queryKey: ['notifications', 'unread'],
+    queryFn: () => notificationsApi.getUnread({ size: 5 }),
+    enabled: !!user,
+    refetchInterval: 60000, // refresh every minute
+  });
+
+  const markAsReadMutation = useMutation({
+    mutationFn: (id: number) => notificationsApi.markAsRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread'] });
+    },
+  });
+
+  const unreadCount = notificationsData?.data?.totalElements || 0;
+  const notifications = notificationsData?.data?.content || [];
+
+  const notifContent = (
+    <div className="w-80 max-h-96 overflow-y-auto">
+      {isNotifLoading ? (
+        <div className="p-4 flex justify-center"><Spin /></div>
+      ) : notifications.length === 0 ? (
+        <div className="p-4 text-center text-gray-500 font-bold">Không có thông báo mới</div>
+      ) : (
+        <div className="flex flex-col">
+          {notifications.map((n: any) => (
+            <div 
+              key={n.id} 
+              className="p-3 border-b-2 border-black hover:bg-gray-100 cursor-pointer flex justify-between gap-2"
+              onClick={() => markAsReadMutation.mutate(n.id)}
+            >
+              <div>
+                <div className="font-bold text-brand-navy">{n.title}</div>
+                <div className="text-sm text-gray-700 mt-1">{n.message}</div>
+                <div className="text-xs text-gray-400 mt-2">{new Date(n.createdAt).toLocaleString()}</div>
+              </div>
+              <div className="w-2 h-2 rounded-full bg-brand-coral mt-1 shrink-0"></div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   const learnerMenu = [
     { key: 'dashboard', label: <Link to="/dashboard" className="font-bold text-lg">Tổng Quan</Link> },
@@ -54,11 +128,21 @@ export function LearnerLayout() {
 
           <div className="flex items-center gap-4">
             {user ? (
-              <Dropdown menu={{ items: userDropdownItems }} placement="bottomRight">
-                <Button className="h-10 px-4 font-bold brutal-border brutal-pill bg-white text-brand-navy flex items-center gap-2">
-                  <span>Hi, {user.username}</span>
-                </Button>
-              </Dropdown>
+              <>
+                <Popover content={notifContent} title={<span className="font-black uppercase tracking-tight border-b-[3px] border-black pb-2 block w-full">Thông báo</span>} trigger="click" placement="bottomRight">
+                  <Badge count={unreadCount} color="#F05A4A">
+                    <Button className="h-10 w-10 p-0 font-bold brutal-border brutal-pill bg-white flex items-center justify-center">
+                      <Bell className="w-5 h-5 text-brand-navy" />
+                    </Button>
+                  </Badge>
+                </Popover>
+                
+                <Dropdown menu={{ items: userDropdownItems }} placement="bottomRight">
+                  <Button className="h-10 px-4 font-bold brutal-border brutal-pill bg-white text-brand-navy flex items-center gap-2">
+                    <span>Hi, {user.username}</span>
+                  </Button>
+                </Dropdown>
+              </>
             ) : (
               <Button onClick={() => navigate('/login')} className="font-bold brutal-border brutal-pill bg-brand-coral text-white">
                 Đăng nhập

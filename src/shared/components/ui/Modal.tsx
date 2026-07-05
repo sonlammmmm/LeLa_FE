@@ -7,9 +7,10 @@ export interface ModalProps {
   onClose: () => void;
   title: React.ReactNode;
   children: React.ReactNode;
+  className?: string;
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, className }) => {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -40,7 +41,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
       />
       
       {/* Modal Panel */}
-      <div className="relative z-50 w-full max-w-lg rounded-xl border border-geist-gray-400 bg-geist-bg-100 p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className={`relative z-50 w-full rounded-xl border border-geist-gray-400 bg-geist-bg-100 p-6 shadow-xl max-h-[90vh] overflow-y-auto ${className || 'max-w-lg'}`}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold tracking-tight text-geist-gray-1000">{title}</h2>
           <button 

@@ -82,7 +82,7 @@ export function AdminDashboardPage() {
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* User Activity Chart */}
-        <div className="flex flex-col border border-geist-gray-400 rounded-lg bg-white shadow-sm p-6 min-h-[400px]">
+        <div className="flex flex-col border border-geist-gray-400 rounded-lg bg-geist-bg-100 shadow-sm p-6 min-h-[400px]">
           <h2 className="text-base font-semibold text-geist-gray-1000 mb-6">Hoạt động người dùng (7 ngày qua)</h2>
           <div className="flex-1 min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -106,7 +106,7 @@ export function AdminDashboardPage() {
         </div>
 
         {/* Subscription Distribution Chart */}
-        <div className="flex flex-col border border-geist-gray-400 rounded-lg bg-white shadow-sm p-6 min-h-[400px]">
+        <div className="flex flex-col border border-geist-gray-400 rounded-lg bg-geist-bg-100 shadow-sm p-6 min-h-[400px]">
           <h2 className="text-base font-semibold text-geist-gray-1000 mb-6">Phân bố gói cước</h2>
           <div className="flex-1 min-h-[300px] flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">

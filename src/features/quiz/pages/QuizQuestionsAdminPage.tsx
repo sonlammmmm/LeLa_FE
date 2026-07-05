@@ -188,7 +188,7 @@ export function QuizQuestionsAdminPage() {
             <label className="text-sm font-medium text-geist-gray-1000">Nội dung câu hỏi</label>
             <textarea 
               {...register('questionText', { required: true })} 
-              className="flex w-full rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
+              className="flex w-full resize-none rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
               rows={3}
             />
             {errors.questionText && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
@@ -227,7 +227,7 @@ export function QuizQuestionsAdminPage() {
             <label className="text-sm font-medium text-geist-gray-1000">Giải thích</label>
             <textarea 
               {...register('explanation')} 
-              className="flex w-full rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
+              className="flex w-full resize-none rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
               rows={2}
             />
           </div>
