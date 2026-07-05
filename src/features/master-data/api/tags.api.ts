@@ -15,7 +15,7 @@ export const tagsApi = {
     return res.data;
   },
   update: async (id: number, data: { name: string }): Promise<ApiResponse<TagResponse>> => {
-    const res = await apiClient.put<ApiResponse<TagResponse>>(`/tags/${id}`, data);
+    const res = await apiClient.patch<ApiResponse<TagResponse>>(`/tags/${id}`, data);
     return res.data;
   },
   delete: async (id: number): Promise<ApiResponse<void>> => {

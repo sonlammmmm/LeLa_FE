@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Form, Input, Button, message } from 'antd';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../shared/providers/AuthProvider';
 import { authApi } from '../api/auth.api';
 

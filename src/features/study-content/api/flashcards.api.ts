@@ -11,7 +11,7 @@ export const flashcardsApi = {
     return res.data;
   },
   update: async (id: number, data: any): Promise<FlashcardResponse> => {
-    const res = await apiClient.put<FlashcardResponse>(`/flashcards/${id}`, data);
+    const res = await apiClient.patch<FlashcardResponse>(`/flashcards/${id}`, data);
     return res.data;
   },
   delete: async (id: number): Promise<void> => {

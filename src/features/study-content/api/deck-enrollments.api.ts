@@ -4,11 +4,11 @@ import type { ApiResponse, DeckEnrollmentResponse, Page } from '../../../shared/
 export const deckEnrollmentsApi = {
   enroll: async (deckId: number): Promise<ApiResponse<DeckEnrollmentResponse>> => {
     // We send a request to enroll
-    const res = await apiClient.post<ApiResponse<DeckEnrollmentResponse>>('/enrollments/enroll', { deckId, status: 'ACTIVE' });
+    const res = await apiClient.post<ApiResponse<DeckEnrollmentResponse>>(`/enrollments/decks/${deckId}/enroll`, { status: 'ACTIVE' });
     return res.data;
   },
   updateStatus: async (deckId: number, status: string): Promise<ApiResponse<DeckEnrollmentResponse>> => {
-    const res = await apiClient.patch<ApiResponse<DeckEnrollmentResponse>>('/enrollments/status', { deckId, status });
+    const res = await apiClient.patch<ApiResponse<DeckEnrollmentResponse>>(`/enrollments/decks/${deckId}/status`, { status });
     return res.data;
   },
   getMyList: async (params?: { page?: number; size?: number }): Promise<ApiResponse<Page<DeckEnrollmentResponse>>> => {

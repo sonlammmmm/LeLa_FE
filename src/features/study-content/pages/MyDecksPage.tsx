@@ -1,12 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
-import { Card, Button, Skeleton } from 'antd';
+import { Card, Button, Skeleton, message } from 'antd';
+import { DownloadOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { deckEnrollmentsApi } from '../api/deck-enrollments.api';
 import { decksApi } from '../api/decks.api';
+import { flashcardsApi } from '../api/flashcards.api';
 
 // Mapped Component to fetch the real Deck details for each enrollment
 function EnrolledDeckCard({ deckId, status, masteredCards }: { deckId: number, status: string, masteredCards: number }) {
   const navigate = useNavigate();
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isOfflineReady, setIsOfflineReady] = useState(() => {
+    return !!localStorage.getItem(`lela_offline_deck_${deckId}`);
+  });
+
   const { data, isLoading } = useQuery({
     queryKey: ['deck', deckId],
     queryFn: () => decksApi.getById(deckId),
@@ -18,6 +26,28 @@ function EnrolledDeckCard({ deckId, status, masteredCards }: { deckId: number, s
 
   const deck = data;
   if (!deck) return null;
+
+  const handleDownloadOffline = async () => {
+    try {
+      setIsDownloading(true);
+      const res = await flashcardsApi.getByDeckId(deckId, { size: 10000 });
+      // flashcardsApi returns Page<FlashcardResponse> directly or ApiResponse wrapped depending on the setup.
+      // Based on TS error, it expects Page<FlashcardResponse> so it has .content
+      // However, if it actually is ApiResponse at runtime, we should handle both.
+      const cards = (res as any)?.data?.content || (res as any)?.content;
+      if (cards) {
+        localStorage.setItem(`lela_offline_deck_${deckId}`, JSON.stringify(cards));
+        setIsOfflineReady(true);
+        message.success('Đã tải bộ thẻ để học offline!');
+      }
+    } catch (error) {
+      message.error('Tải offline thất bại!');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const progressPercent = deck.totalCards > 0 ? Math.round((masteredCards / deck.totalCards) * 100) : 0;
 
   return (
     <div className="brutal-card bg-white flex flex-col h-full overflow-hidden">
@@ -31,9 +61,20 @@ function EnrolledDeckCard({ deckId, status, masteredCards }: { deckId: number, s
       </div>
       <div className="p-4 flex flex-col flex-1">
         <h3 className="text-xl font-bold leading-tight mb-2 line-clamp-1">{deck.title}</h3>
-        <p className="text-sm font-bold text-gray-500 mb-4">
-          Đã thuộc: {masteredCards} / {deck.totalCards} thẻ
-        </p>
+        
+        <div className="mb-4 mt-2">
+          <div className="flex justify-between text-xs font-bold text-gray-700 mb-1 uppercase">
+            <span>Tiến độ</span>
+            <span>{masteredCards} / {deck.totalCards} thẻ ({progressPercent}%)</span>
+          </div>
+          <div className="h-4 w-full bg-[#F4F3EE] border-[2px] border-black overflow-hidden relative shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+            <div 
+              className="h-full bg-[#2A8B9D] border-r-[2px] border-black transition-all duration-500"
+              style={{ width: `${progressPercent}%` }}
+            ></div>
+          </div>
+        </div>
+
         <div className="mt-auto flex gap-2">
           <Button 
             className="flex-1 brutal-border brutal-shadow-sm font-black uppercase h-10 !bg-[#1D2A3A] !text-white hover:!translate-y-[-2px]"
@@ -42,11 +83,12 @@ function EnrolledDeckCard({ deckId, status, masteredCards }: { deckId: number, s
             HỌC TIẾP
           </Button>
           <Button 
-            className="brutal-border font-bold h-10"
-            onClick={() => navigate(`/decks/${deck.id}`)}
-          >
-            CHI TIẾT
-          </Button>
+            className="brutal-border font-bold h-10 px-3 flex items-center justify-center bg-white"
+            icon={isOfflineReady ? <CheckCircleOutlined className="text-[#2A8B9D] text-lg" /> : <DownloadOutlined className="text-lg" />}
+            loading={isDownloading}
+            onClick={handleDownloadOffline}
+            title="Tải Offline"
+          />
         </div>
       </div>
     </div>

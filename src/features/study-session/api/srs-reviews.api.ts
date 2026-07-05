@@ -6,4 +6,12 @@ export const srsReviewsApi = {
     const res = await apiClient.post<ApiResponse<any>>('/srs-reviews', data);
     return res.data;
   },
+  getHistory: async (params?: any): Promise<ApiResponse<any>> => {
+    const res = await apiClient.get<ApiResponse<any>>('/srs-reviews/history', { params });
+    return res.data;
+  },
+  getStatistics: async (): Promise<ApiResponse<any>> => {
+    const res = await apiClient.get<ApiResponse<any>>('/srs-reviews/statistics');
+    return res.data;
+  },
 };

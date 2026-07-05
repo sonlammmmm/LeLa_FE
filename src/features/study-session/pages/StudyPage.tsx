@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Skeleton } from 'antd';
+import { CloudServerOutlined, DisconnectOutlined } from '@ant-design/icons';
 import { flashcardsApi } from '../../study-content/api/flashcards.api';
 // import { srsReviewsApi } from '../api/srs-reviews.api'; // To be integrated
 
@@ -12,18 +13,33 @@ export function StudyPage() {
   const [showBack, setShowBack] = useState(false);
 
   // For demo, we just fetch all flashcards in the deck.
-  // In a real flow, this should fetch CardProgress due today, then map to flashcards.
-  const { data, isLoading } = useQuery({
+  const { data: onlineData, isLoading, isError } = useQuery({
     queryKey: ['study-cards', deckId],
-    queryFn: () => flashcardsApi.getByDeckId(Number(deckId)),
+    queryFn: () => flashcardsApi.getByDeckId(Number(deckId), { size: 10000 }),
     enabled: !!deckId,
+    retry: 1,
   });
 
-  const cards = data?.content || [];
+  let cards = onlineData?.content || [];
+  let isOffline = false;
+
+  if (isError || (!isLoading && cards.length === 0)) {
+    const offlineDataStr = localStorage.getItem(`lela_offline_deck_${deckId}`);
+    if (offlineDataStr) {
+      try {
+        cards = JSON.parse(offlineDataStr);
+        isOffline = true;
+      } catch (e) {
+        console.error('Failed to parse offline cards', e);
+      }
+    }
+  }
+
   const currentCard = cards[currentIndex];
 
   const handleNext = (rating: number) => {
     // Here we would call srsReviewsApi.reviewCard({ cardId: currentCard.id, rating, ... })
+    // In offline mode, we might want to queue this in localStorage to sync later.
     console.log('Rated', rating);
     
     if (currentIndex < cards.length - 1) {
@@ -42,8 +58,9 @@ export function StudyPage() {
   if (cards.length === 0) {
     return (
       <div className="p-8 max-w-2xl mx-auto text-center mt-20 brutal-card bg-white">
-        <h2 className="text-2xl font-bold mb-4">Không có thẻ nào để học!</h2>
-        <Button onClick={() => navigate('/my-decks')} className="brutal-border font-bold">Quay lại</Button>
+        <h2 className="text-2xl font-bold mb-4">Không tải được thẻ!</h2>
+        <p className="mb-6 font-medium text-gray-600">Vui lòng kiểm tra kết nối mạng hoặc tải bộ thẻ về máy trước để học offline.</p>
+        <Button onClick={() => navigate('/my-decks')} className="brutal-border font-bold h-12 px-6">Quay lại</Button>
       </div>
     );
   }
@@ -53,8 +70,20 @@ export function StudyPage() {
       <div className="w-full max-w-2xl">
         <div className="flex justify-between items-center mb-6">
           <Button onClick={() => navigate('/my-decks')} className="brutal-border font-bold">&larr; THOÁT</Button>
-          <div className="font-bold text-lg brutal-card bg-white px-4 py-1">
-            Tiến độ: {currentIndex + 1} / {cards.length}
+          
+          <div className="flex gap-4">
+            {isOffline ? (
+              <div className="font-bold text-sm brutal-card bg-[#FFD700] px-4 py-1 flex items-center gap-2 border-[2px] shadow-[2px_2px_0px_0px_#000]">
+                <DisconnectOutlined /> CHẾ ĐỘ OFFLINE
+              </div>
+            ) : (
+              <div className="font-bold text-sm brutal-card bg-[#ccffcc] text-[#009900] px-4 py-1 flex items-center gap-2 border-[2px] shadow-[2px_2px_0px_0px_#000]">
+                <CloudServerOutlined /> ONLINE
+              </div>
+            )}
+            <div className="font-bold text-lg brutal-card bg-white px-4 py-1 border-[2px] shadow-[2px_2px_0px_0px_#000]">
+              Tiến độ: {currentIndex + 1} / {cards.length}
+            </div>
           </div>
         </div>
 

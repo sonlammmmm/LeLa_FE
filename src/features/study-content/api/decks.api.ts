@@ -15,7 +15,7 @@ export const decksApi = {
     return res.data;
   },
   update: async (id: number, data: any): Promise<DeckResponse> => {
-    const res = await apiClient.put<DeckResponse>(`/decks/${id}`, data);
+    const res = await apiClient.patch<DeckResponse>(`/decks/${id}`, data);
     return res.data;
   },
   delete: async (id: number): Promise<void> => {

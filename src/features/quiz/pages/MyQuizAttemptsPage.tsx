@@ -57,7 +57,7 @@ export function MyQuizAttemptsPage() {
           <Skeleton active />
         ) : (
           <Table 
-            dataSource={data?.content || []} 
+            dataSource={data?.data?.content || []} 
             columns={columns} 
             rowKey="id" 
             pagination={false} 

@@ -47,9 +47,10 @@ body {
 
 ::selection {
   background-color: rgba(240, 90, 74, 0.3);
+}
 
-  /* brand-coral/30 */
-  /* Brutalist Form Validation Errors */
+/* brand-coral/30 */
+/* Brutalist Form Validation Errors */
   .ant-form-item {
     margin-bottom: 28px !important;
     /* Reserve enough fixed space for the absolute error text */

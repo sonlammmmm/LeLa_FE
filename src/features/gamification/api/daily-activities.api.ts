@@ -6,4 +6,12 @@ export const dailyActivitiesApi = {
     const res = await apiClient.get<ApiResponse<any>>('/daily-activities/today');
     return res.data;
   },
+  logActivity: async (): Promise<ApiResponse<any>> => {
+    const res = await apiClient.post<ApiResponse<any>>('/daily-activities/log');
+    return res.data;
+  },
+  getHistory: async (params?: { startDate?: string; endDate?: string }): Promise<ApiResponse<any>> => {
+    const res = await apiClient.get<ApiResponse<any>>('/daily-activities/history', { params });
+    return res.data;
+  },
 };

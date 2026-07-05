@@ -15,7 +15,7 @@ export const quizQuestionsApi = {
     return res.data;
   },
   update: async (id: number, data: any): Promise<ApiResponse<QuizQuestionResponse>> => {
-    const res = await apiClient.put<ApiResponse<QuizQuestionResponse>>(`/quiz-questions/${id}`, data);
+    const res = await apiClient.patch<ApiResponse<QuizQuestionResponse>>(`/quiz-questions/${id}`, data);
     return res.data;
   },
   delete: async (id: number): Promise<ApiResponse<void>> => {
