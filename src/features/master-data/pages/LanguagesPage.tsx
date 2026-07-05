@@ -7,7 +7,7 @@ import type { LanguageResponse } from '../../../shared/types/lela';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input } from '../../../shared/components/ui/Input';
 import { Modal } from '../../../shared/components/ui/Modal';
-import { message } from 'antd'; // Keeping message for toast notifications, or could replace with sonner/toast
+import { message, Modal as AntdModal } from 'antd'; // Keeping message for toast notifications, or could replace with sonner/toast
 
 type FormValues = {
   languageCode: string;
@@ -35,22 +35,22 @@ export function LanguagesPage() {
     mutationFn: (values: FormValues) => 
       editingLang ? languagesApi.update(editingLang.id, values) : languagesApi.create(values),
     onSuccess: () => {
-      message.success(editingLang ? 'Language updated' : 'Language created');
+      message.success(editingLang ? 'Cập nhật ngôn ngữ thành công' : 'Tạo ngôn ngữ thành công');
       setIsModalOpen(false);
       reset();
       setEditingLang(null);
       queryClient.invalidateQueries({ queryKey: ['languages'] });
     },
-    onError: (err: any) => message.error(err.response?.data?.message || 'An error occurred'),
+    onError: (err: any) => message.error(err.response?.data?.message || 'Có lỗi xảy ra'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => languagesApi.delete(id),
     onSuccess: () => {
-      message.success('Language deleted');
+      message.success('Xóa ngôn ngữ thành công');
       queryClient.invalidateQueries({ queryKey: ['languages'] });
     },
-    onError: (err: any) => message.error(err.response?.data?.message || 'An error occurred'),
+    onError: (err: any) => message.error(err.response?.data?.message || 'Có lỗi xảy ra'),
   });
 
   const openModal = (lang?: LanguageResponse) => {
@@ -78,12 +78,12 @@ export function LanguagesPage() {
     <div className="max-w-6xl">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-geist-gray-1000">Languages</h1>
-          <p className="text-sm text-geist-gray-700 mt-1">Manage system languages</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-geist-gray-1000">Ngôn ngữ</h1>
+          <p className="text-sm text-geist-gray-700 mt-1">Quản lý ngôn ngữ hệ thống</p>
         </div>
         <Button onClick={() => openModal()}>
           <Plus className="w-4 h-4 mr-2" />
-          New Language
+          Thêm ngôn ngữ
         </Button>
       </div>
 
@@ -93,16 +93,16 @@ export function LanguagesPage() {
             <thead className="bg-geist-gray-100 text-geist-gray-700 font-medium border-b border-geist-gray-300">
               <tr>
                 <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">Code</th>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Native Name</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">Mã</th>
+                <th className="px-4 py-3">Tên Tiếng Anh</th>
+                <th className="px-4 py-3">Tên Bản Địa</th>
+                <th className="px-4 py-3">Trạng thái</th>
+                <th className="px-4 py-3 text-right">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-geist-gray-300">
               {isLoading ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-geist-gray-600">Loading...</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-geist-gray-600">Đang tải...</td></tr>
               ) : data?.data?.map((lang) => (
                 <tr key={lang.id} className="hover:bg-geist-gray-100/50 transition-colors">
                   <td className="px-4 py-3 font-mono text-geist-gray-900">{lang.id}</td>
@@ -113,23 +113,28 @@ export function LanguagesPage() {
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       lang.isActive ? 'bg-geist-success-100 text-geist-success-800' : 'bg-geist-gray-200 text-geist-gray-800'
                     }`}>
-                      {lang.isActive ? 'Active' : 'Inactive'}
+                      {lang.isActive ? 'Hoạt động' : 'Ngừng hoạt động'}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => openModal(lang)} title="Edit">
+                      <Button variant="ghost" size="icon" onClick={() => openModal(lang)} title="Chỉnh sửa">
                         <Edit2 className="w-4 h-4" />
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="icon" 
                         className="text-geist-red-800 hover:text-geist-red-900 hover:bg-geist-red-100"
-                        title="Delete"
+                        title="Xóa"
                         onClick={() => {
-                          if (window.confirm('Delete this language? This action cannot be undone.')) {
-                            deleteMutation.mutate(lang.id);
-                          }
+                          AntdModal.confirm({
+                            title: 'Xác nhận xóa',
+                            content: 'Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa?',
+                            okText: 'Xóa',
+                            cancelText: 'Hủy',
+                            okButtonProps: { danger: true },
+                            onOk: () => deleteMutation.mutate(lang.id),
+                          });
                         }}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -139,7 +144,7 @@ export function LanguagesPage() {
                 </tr>
               ))}
               {data?.data?.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-geist-gray-600">No languages found</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-geist-gray-600">Không tìm thấy ngôn ngữ nào</td></tr>
               )}
             </tbody>
           </table>
@@ -147,34 +152,34 @@ export function LanguagesPage() {
       </div>
 
       <Modal
-        title={editingLang ? 'Edit Language' : 'New Language'}
+        title={editingLang ? 'Chỉnh sửa ngôn ngữ' : 'Thêm ngôn ngữ'}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       >
         <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">Code (e.g. en, vi)</label>
+              <label className="text-sm font-medium text-geist-gray-1000">Mã ngôn ngữ (VD: en, vi)</label>
               <Input {...register('languageCode', { required: true })} />
-              {errors.languageCode && <span className="text-xs text-geist-red-800">Required</span>}
+              {errors.languageCode && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">English Name</label>
+              <label className="text-sm font-medium text-geist-gray-1000">Tên Tiếng Anh</label>
               <Input {...register('name', { required: true })} />
-              {errors.name && <span className="text-xs text-geist-red-800">Required</span>}
+              {errors.name && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
             </div>
           </div>
           
           <div className="space-y-2">
-            <label className="text-sm font-medium text-geist-gray-1000">Native Name</label>
+            <label className="text-sm font-medium text-geist-gray-1000">Tên Bản Địa</label>
             <Input {...register('nativeName', { required: true })} />
-            {errors.nativeName && <span className="text-xs text-geist-red-800">Required</span>}
+            {errors.nativeName && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
           </div>
           
           <div className="space-y-2">
-            <label className="text-sm font-medium text-geist-gray-1000">Flag URL</label>
+            <label className="text-sm font-medium text-geist-gray-1000">Đường dẫn cờ</label>
             <Input {...register('flagUrl', { required: true })} placeholder="https://..." />
-            {errors.flagUrl && <span className="text-xs text-geist-red-800">Required</span>}
+            {errors.flagUrl && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
           </div>
           
           <div className="flex items-center gap-2 pt-2">
@@ -185,16 +190,16 @@ export function LanguagesPage() {
               {...register('isActive')}
             />
             <label htmlFor="isActive" className="text-sm font-medium text-geist-gray-1000 cursor-pointer">
-              Active
+              Hoạt động
             </label>
           </div>
           
           <div className="flex justify-end gap-3 mt-8">
             <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
-              Cancel
+              Hủy
             </Button>
             <Button type="submit" disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? 'Saving...' : 'Save'}
+              {saveMutation.isPending ? 'Đang lưu...' : 'Lưu'}
             </Button>
           </div>
         </form>

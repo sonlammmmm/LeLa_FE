@@ -1,7 +1,7 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../providers/AuthProvider';
 import { useTheme } from '../../providers/ThemeProvider';
-import { LogOut, LayoutDashboard, Tags, Languages, Book, HelpCircle, Moon, Sun, Monitor } from 'lucide-react';
+import { LogOut, LayoutDashboard, Tags, Languages, Book, HelpCircle, Moon, Sun, Monitor, Users, CreditCard } from 'lucide-react';
 import type { UserRole } from '../../types/lela';
 
 export function AdminLayout() {
@@ -17,11 +17,13 @@ export function AdminLayout() {
 
   type NavItem = { name: string; path: string; icon: any; roles: UserRole[] };
   const navItems: NavItem[] = [
-    { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard, roles: ['ADMIN'] },
-    { name: 'Tags', path: '/admin/tags', icon: Tags, roles: ['ADMIN'] },
-    { name: 'Languages', path: '/admin/languages', icon: Languages, roles: ['ADMIN'] },
-    { name: 'Decks', path: '/admin/decks', icon: Book, roles: ['ADMIN', 'CONTENT_CREATOR'] },
-    { name: 'Quizzes', path: '/admin/quizzes', icon: HelpCircle, roles: ['ADMIN', 'CONTENT_CREATOR'] },
+    { name: 'Bảng điều khiển', path: '/admin/dashboard', icon: LayoutDashboard, roles: ['ADMIN'] },
+    { name: 'Người dùng', path: '/admin/users', icon: Users, roles: ['ADMIN'] },
+    { name: 'Giao dịch', path: '/admin/transactions', icon: CreditCard, roles: ['ADMIN'] },
+    { name: 'Thẻ (Tags)', path: '/admin/tags', icon: Tags, roles: ['ADMIN'] },
+    { name: 'Ngôn ngữ', path: '/admin/languages', icon: Languages, roles: ['ADMIN'] },
+    { name: 'Bộ thẻ (Decks)', path: '/admin/decks', icon: Book, roles: ['ADMIN', 'CONTENT_CREATOR'] },
+    { name: 'Bài kiểm tra', path: '/admin/quizzes', icon: HelpCircle, roles: ['ADMIN', 'CONTENT_CREATOR'] },
   ];
 
   return (
@@ -39,21 +41,21 @@ export function AdminLayout() {
             <button
               onClick={() => setTheme('light')}
               className={`rounded-full p-1.5 transition-colors ${theme === 'light' ? 'bg-geist-bg-100 shadow-sm text-geist-gray-1000' : 'text-geist-gray-700 hover:text-geist-gray-1000'}`}
-              title="Light Mode"
+              title="Giao diện sáng"
             >
               <Sun className="h-4 w-4" />
             </button>
             <button
               onClick={() => setTheme('system')}
               className={`rounded-full p-1.5 transition-colors ${theme === 'system' ? 'bg-geist-bg-100 shadow-sm text-geist-gray-1000' : 'text-geist-gray-700 hover:text-geist-gray-1000'}`}
-              title="System Mode"
+              title="Giao diện hệ thống"
             >
               <Monitor className="h-4 w-4" />
             </button>
             <button
               onClick={() => setTheme('dark')}
               className={`rounded-full p-1.5 transition-colors ${theme === 'dark' ? 'bg-geist-bg-100 shadow-sm text-geist-gray-1000' : 'text-geist-gray-700 hover:text-geist-gray-1000'}`}
-              title="Dark Mode"
+              title="Giao diện tối"
             >
               <Moon className="h-4 w-4" />
             </button>
@@ -67,7 +69,7 @@ export function AdminLayout() {
             <button
               onClick={handleLogout}
               className="rounded-md p-2 text-geist-gray-700 hover:bg-geist-gray-200 hover:text-geist-gray-1000 transition-colors"
-              title="Logout"
+              title="Đăng xuất"
             >
               <LogOut className="h-5 w-5" />
             </button>
@@ -75,9 +77,9 @@ export function AdminLayout() {
         </div>
       </header>
 
-      <div className="flex mx-auto max-w-7xl">
+      <div className="flex px-6">
         {/* Sidebar */}
-        <aside className="w-64 shrink-0 py-8 pr-8">
+        <aside className="w-48 shrink-0 py-8 pr-6">
           <nav className="flex flex-col gap-1">
             {navItems.map((item) => {
               // Ensure user has at least one of the required roles
@@ -106,7 +108,7 @@ export function AdminLayout() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 py-8 pl-8 border-l border-geist-gray-300 min-h-[calc(100vh-4rem)]">
+        <main className="flex-1 py-8 pl-6 border-l border-geist-gray-300 min-h-[calc(100vh-4rem)]">
           <Outlet />
         </main>
       </div>

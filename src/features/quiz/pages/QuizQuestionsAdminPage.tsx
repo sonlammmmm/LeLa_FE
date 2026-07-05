@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Plus, Edit2, Trash2, ArrowLeft } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { message } from 'antd'; // Keeping message for toast notifications
+import { message, Modal as AntdModal } from 'antd'; // Keeping message for toast notifications
 import { quizQuestionsApi } from '../api/quiz-questions.api';
 import type { QuizQuestionResponse } from '../../../shared/types/lela';
 import { Button } from '../../../shared/components/ui/Button';
@@ -18,6 +18,12 @@ type FormValues = {
   questionImageUrl: string;
   explanation: string;
   isActive: boolean;
+};
+
+const QUESTION_TYPE_MAP: Record<string, string> = {
+  MULTIPLE_CHOICE: 'Trắc nghiệm',
+  TRUE_FALSE: 'Đúng / Sai',
+  FILL_IN_THE_BLANK: 'Điền vào chỗ trống',
 };
 
 export function QuizQuestionsAdminPage() {
@@ -48,22 +54,22 @@ export function QuizQuestionsAdminPage() {
         ? quizQuestionsApi.update(editingQuestion.id, { ...values, quizId: Number(quizId) }) 
         : quizQuestionsApi.create({ ...values, quizId: Number(quizId) }),
     onSuccess: () => {
-      message.success(editingQuestion ? 'Question updated' : 'Question created');
+      message.success(editingQuestion ? 'Cập nhật câu hỏi thành công' : 'Tạo câu hỏi thành công');
       setIsModalOpen(false);
       reset();
       setEditingQuestion(null);
       queryClient.invalidateQueries({ queryKey: ['admin-quiz-questions', quizId] });
     },
-    onError: (err: any) => message.error(err.response?.data?.message || 'An error occurred'),
+    onError: (err: any) => message.error(err.response?.data?.message || 'Có lỗi xảy ra'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => quizQuestionsApi.delete(id),
     onSuccess: () => {
-      message.success('Question deleted');
+      message.success('Xóa câu hỏi thành công');
       queryClient.invalidateQueries({ queryKey: ['admin-quiz-questions', quizId] });
     },
-    onError: (err: any) => message.error(err.response?.data?.message || 'An error occurred'),
+    onError: (err: any) => message.error(err.response?.data?.message || 'Có lỗi xảy ra'),
   });
 
   const openModal = (question?: QuizQuestionResponse) => {
@@ -99,20 +105,20 @@ export function QuizQuestionsAdminPage() {
       <div className="mb-6 flex items-center gap-4">
         <Button variant="ghost" onClick={() => navigate('/admin/quizzes')} className="text-geist-gray-700">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Quizzes
+          Quay lại Bài kiểm tra
         </Button>
       </div>
 
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-geist-gray-1000">
-            Questions <span className="text-geist-gray-600 font-normal text-lg">/ Quiz #{quizId}</span>
+            Câu hỏi <span className="text-geist-gray-600 font-normal text-lg">/ Bài kiểm tra #{quizId}</span>
           </h1>
-          <p className="text-sm text-geist-gray-700 mt-1">Manage questions for this quiz</p>
+          <p className="text-sm text-geist-gray-700 mt-1">Quản lý các câu hỏi cho bài kiểm tra này</p>
         </div>
         <Button onClick={() => openModal()}>
           <Plus className="w-4 h-4 mr-2" />
-          New Question
+          Thêm câu hỏi
         </Button>
       </div>
 
@@ -121,36 +127,41 @@ export function QuizQuestionsAdminPage() {
           <table className="w-full text-sm text-left">
             <thead className="bg-geist-gray-100 text-geist-gray-700 font-medium border-b border-geist-gray-300">
               <tr>
-                <th className="px-4 py-3">Order</th>
-                <th className="px-4 py-3">Question</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Points</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">Thứ tự</th>
+                <th className="px-4 py-3">Câu hỏi</th>
+                <th className="px-4 py-3">Loại</th>
+                <th className="px-4 py-3">Điểm</th>
+                <th className="px-4 py-3 text-right">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-geist-gray-300">
               {isLoading ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-geist-gray-600">Loading...</td></tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-geist-gray-600">Đang tải...</td></tr>
               ) : data?.data?.content?.map((question) => (
                 <tr key={question.id} className="hover:bg-geist-gray-100/50 transition-colors">
                   <td className="px-4 py-3 font-mono text-geist-gray-900">{question.displayOrder}</td>
                   <td className="px-4 py-3 text-geist-gray-1000 font-medium whitespace-pre-wrap max-w-sm">{question.questionText}</td>
-                  <td className="px-4 py-3 text-geist-gray-1000">{question.questionType}</td>
+                  <td className="px-4 py-3 text-geist-gray-1000">{QUESTION_TYPE_MAP[question.questionType] || question.questionType}</td>
                   <td className="px-4 py-3 text-geist-gray-1000">{question.points}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => openModal(question)} title="Edit">
+                      <Button variant="ghost" size="icon" onClick={() => openModal(question)} title="Chỉnh sửa">
                         <Edit2 className="w-4 h-4" />
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="icon" 
                         className="text-geist-red-800 hover:text-geist-red-900 hover:bg-geist-red-100"
-                        title="Delete"
+                        title="Xóa"
                         onClick={() => {
-                          if (window.confirm('Delete this question? This action cannot be undone.')) {
-                            deleteMutation.mutate(question.id);
-                          }
+                          AntdModal.confirm({
+                            title: 'Xác nhận xóa',
+                            content: 'Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa?',
+                            okText: 'Xóa',
+                            cancelText: 'Hủy',
+                            okButtonProps: { danger: true },
+                            onOk: () => deleteMutation.mutate(question.id),
+                          });
                         }}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -160,7 +171,7 @@ export function QuizQuestionsAdminPage() {
                 </tr>
               ))}
               {(!data?.data?.content || data.data.content.length === 0) && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-geist-gray-600">No questions found</td></tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-geist-gray-600">Không tìm thấy câu hỏi nào</td></tr>
               )}
             </tbody>
           </table>
@@ -168,52 +179,52 @@ export function QuizQuestionsAdminPage() {
       </div>
 
       <Modal
-        title={editingQuestion ? 'Edit Question' : 'New Question'}
+        title={editingQuestion ? 'Chỉnh sửa câu hỏi' : 'Thêm câu hỏi'}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       >
         <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-geist-gray-1000">Question Content</label>
+            <label className="text-sm font-medium text-geist-gray-1000">Nội dung câu hỏi</label>
             <textarea 
               {...register('questionText', { required: true })} 
               className="flex w-full rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
               rows={3}
             />
-            {errors.questionText && <span className="text-xs text-geist-red-800">Required</span>}
+            {errors.questionText && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">Question Type</label>
+              <label className="text-sm font-medium text-geist-gray-1000">Loại câu hỏi</label>
               <select 
                 {...register('questionType', { required: true })}
                 className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
               >
-                <option value="MULTIPLE_CHOICE">Multiple Choice</option>
-                <option value="TRUE_FALSE">True / False</option>
-                <option value="FILL_IN_THE_BLANK">Fill in the Blank</option>
+                <option value="MULTIPLE_CHOICE">Trắc nghiệm</option>
+                <option value="TRUE_FALSE">Đúng / Sai</option>
+                <option value="FILL_IN_THE_BLANK">Điền vào chỗ trống</option>
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">Points</label>
+              <label className="text-sm font-medium text-geist-gray-1000">Điểm</label>
               <Input type="number" {...register('points')} min="1" />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">Display Order</label>
+              <label className="text-sm font-medium text-geist-gray-1000">Thứ tự hiển thị</label>
               <Input type="number" {...register('displayOrder')} min="0" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">Image URL (Optional)</label>
+              <label className="text-sm font-medium text-geist-gray-1000">Đường dẫn ảnh (Tùy chọn)</label>
               <Input {...register('questionImageUrl')} />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-geist-gray-1000">Explanation</label>
+            <label className="text-sm font-medium text-geist-gray-1000">Giải thích</label>
             <textarea 
               {...register('explanation')} 
               className="flex w-full rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
@@ -222,7 +233,7 @@ export function QuizQuestionsAdminPage() {
           </div>
           
           <div className="space-y-2 flex flex-col justify-center mt-2">
-            <label className="text-sm font-medium text-geist-gray-1000 mb-2">Active</label>
+            <label className="text-sm font-medium text-geist-gray-1000 mb-2">Hoạt động</label>
             <div className="flex items-center gap-2">
               <input 
                 type="checkbox" 
@@ -234,10 +245,10 @@ export function QuizQuestionsAdminPage() {
 
           <div className="flex justify-end gap-3 mt-8">
             <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
-              Cancel
+              Hủy
             </Button>
             <Button type="submit" disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? 'Saving...' : 'Save'}
+              {saveMutation.isPending ? 'Đang lưu...' : 'Lưu'}
             </Button>
           </div>
         </form>

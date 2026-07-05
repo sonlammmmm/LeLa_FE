@@ -121,12 +121,12 @@ export function AuthModal({ open, onCancel, defaultView = 'login' }: AuthModalPr
               <Input.Password className="brutal-border brutal-shadow-sm !h-12" placeholder="••••••••" />
             </Form.Item>
 
-            <div className="flex justify-center w-full">
+            <div className="flex justify-center w-full mt-8">
               <Button 
                 type="primary" 
                 htmlType="submit" 
                 loading={loading}
-                className="w-full !h-14 brutal-border brutal-shadow brutal-pill mt-4 !bg-[#F05A4A] !text-white font-black text-lg hover:!translate-y-[-2px] hover:!bg-[#d94a39] transition-transform border-black"
+                className="w-full !h-14 brutal-border brutal-shadow brutal-pill !bg-[#F05A4A] !text-white font-black text-lg hover:!translate-y-[-2px] hover:!bg-[#d94a39] transition-transform border-black"
               >
                 ĐĂNG NHẬP
               </Button>
@@ -209,11 +209,11 @@ export function AuthModal({ open, onCancel, defaultView = 'login' }: AuthModalPr
               </Form.Item>
             </div>
 
-            <div className="flex justify-center w-full">
+            <div className="flex justify-center w-full mt-8">
               <Button 
                 htmlType="submit" 
                 loading={loading}
-                className="w-full md:w-auto md:min-w-[240px] !h-14 brutal-border brutal-shadow brutal-pill mt-4 !bg-[#F05A4A] !text-white font-black text-lg hover:!translate-y-[-2px] hover:!bg-[#d94a39] transition-transform border-black"
+                className="w-full md:w-auto md:min-w-[240px] !h-14 brutal-border brutal-shadow brutal-pill !bg-[#F05A4A] !text-white font-black text-lg hover:!translate-y-[-2px] hover:!bg-[#d94a39] transition-transform border-black"
               >
                 ĐĂNG KÝ
               </Button>

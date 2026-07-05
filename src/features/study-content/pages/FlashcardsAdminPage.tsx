@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { Plus, Edit2, Trash2, ArrowLeft } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { message } from 'antd'; // Keeping message for toast notifications
+import { message, Modal as AntdModal } from 'antd'; // Keeping message for toast notifications
 import { flashcardsApi } from '../api/flashcards.api';
 import type { FlashcardResponse } from '../../../shared/types/lela';
 import { Button } from '../../../shared/components/ui/Button';
@@ -41,22 +41,22 @@ export function FlashcardsAdminPage() {
         ? flashcardsApi.update(editingCard.id, { ...values, deckId: Number(deckId) }) 
         : flashcardsApi.create({ ...values, deckId: Number(deckId) }),
     onSuccess: () => {
-      message.success(editingCard ? 'Card updated' : 'Card created');
+      message.success(editingCard ? 'Cập nhật thẻ thành công' : 'Tạo thẻ thành công');
       setIsModalOpen(false);
       reset();
       setEditingCard(null);
       queryClient.invalidateQueries({ queryKey: ['flashcards', deckId] });
     },
-    onError: (err: any) => message.error(err.response?.data?.message || 'An error occurred'),
+    onError: (err: any) => message.error(err.response?.data?.message || 'Có lỗi xảy ra'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => flashcardsApi.delete(id),
     onSuccess: () => {
-      message.success('Card deleted');
+      message.success('Xóa thẻ thành công');
       queryClient.invalidateQueries({ queryKey: ['flashcards', deckId] });
     },
-    onError: (err: any) => message.error(err.response?.data?.message || 'An error occurred'),
+    onError: (err: any) => message.error(err.response?.data?.message || 'Có lỗi xảy ra'),
   });
 
   const openModal = (card?: FlashcardResponse) => {
@@ -87,20 +87,20 @@ export function FlashcardsAdminPage() {
       <div className="mb-6 flex items-center gap-4">
         <Button variant="ghost" onClick={() => navigate('/admin/decks')} className="text-geist-gray-700">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Decks
+          Quay lại Bộ thẻ
         </Button>
       </div>
       
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-geist-gray-1000">
-            Flashcards <span className="text-geist-gray-600 font-normal text-lg">/ Deck #{deckId}</span>
+            Thẻ ghi nhớ <span className="text-geist-gray-600 font-normal text-lg">/ Bộ thẻ #{deckId}</span>
           </h1>
-          <p className="text-sm text-geist-gray-700 mt-1">Manage individual flashcards within this deck</p>
+          <p className="text-sm text-geist-gray-700 mt-1">Quản lý các thẻ ghi nhớ trong bộ thẻ này</p>
         </div>
         <Button onClick={() => openModal()}>
           <Plus className="w-4 h-4 mr-2" />
-          New Card
+          Thêm thẻ
         </Button>
       </div>
 
@@ -110,15 +110,15 @@ export function FlashcardsAdminPage() {
             <thead className="bg-geist-gray-100 text-geist-gray-700 font-medium border-b border-geist-gray-300">
               <tr>
                 <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">Front</th>
-                <th className="px-4 py-3">Back</th>
-                <th className="px-4 py-3">Phonetic</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3">Mặt trước</th>
+                <th className="px-4 py-3">Mặt sau</th>
+                <th className="px-4 py-3">Phiên âm</th>
+                <th className="px-4 py-3 text-right">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-geist-gray-300">
               {isLoading ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-geist-gray-600">Loading...</td></tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-geist-gray-600">Đang tải...</td></tr>
               ) : data?.content?.map((card) => (
                 <tr key={card.id} className="hover:bg-geist-gray-100/50 transition-colors">
                   <td className="px-4 py-3 font-mono text-geist-gray-900">{card.id}</td>
@@ -127,18 +127,23 @@ export function FlashcardsAdminPage() {
                   <td className="px-4 py-3 text-geist-gray-700">{card.phonetic}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => openModal(card)} title="Edit">
+                      <Button variant="ghost" size="icon" onClick={() => openModal(card)} title="Chỉnh sửa">
                         <Edit2 className="w-4 h-4" />
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="icon" 
                         className="text-geist-red-800 hover:text-geist-red-900 hover:bg-geist-red-100"
-                        title="Delete"
+                        title="Xóa"
                         onClick={() => {
-                          if (window.confirm('Delete this card? This action cannot be undone.')) {
-                            deleteMutation.mutate(card.id);
-                          }
+                          AntdModal.confirm({
+                            title: 'Xác nhận xóa',
+                            content: 'Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa?',
+                            okText: 'Xóa',
+                            cancelText: 'Hủy',
+                            okButtonProps: { danger: true },
+                            onOk: () => deleteMutation.mutate(card.id),
+                          });
                         }}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -148,7 +153,7 @@ export function FlashcardsAdminPage() {
                 </tr>
               ))}
               {(!data?.content || data.content.length === 0) && (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-geist-gray-600">No cards found in this deck</td></tr>
+                <tr><td colSpan={5} className="px-4 py-8 text-center text-geist-gray-600">Không tìm thấy thẻ nào trong bộ thẻ này</td></tr>
               )}
             </tbody>
           </table>
@@ -156,39 +161,39 @@ export function FlashcardsAdminPage() {
       </div>
 
       <Modal
-        title={editingCard ? 'Edit Card' : 'New Card'}
+        title={editingCard ? 'Chỉnh sửa thẻ' : 'Thêm thẻ'}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       >
         <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">Front (Vocabulary)</label>
+              <label className="text-sm font-medium text-geist-gray-1000">Mặt trước (Từ vựng)</label>
               <textarea 
                 {...register('frontText', { required: true })} 
                 className="flex w-full rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
                 rows={3}
               />
-              {errors.frontText && <span className="text-xs text-geist-red-800">Required</span>}
+              {errors.frontText && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">Back (Meaning)</label>
+              <label className="text-sm font-medium text-geist-gray-1000">Mặt sau (Ý nghĩa)</label>
               <textarea 
                 {...register('backText', { required: true })} 
                 className="flex w-full rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
                 rows={3}
               />
-              {errors.backText && <span className="text-xs text-geist-red-800">Required</span>}
+              {errors.backText && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
             </div>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">Phonetic / Pronunciation</label>
+              <label className="text-sm font-medium text-geist-gray-1000">Phiên âm / Phát âm</label>
               <Input {...register('phonetic')} />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">Example Sentence</label>
+              <label className="text-sm font-medium text-geist-gray-1000">Câu ví dụ</label>
               <textarea 
                 {...register('exampleText')} 
                 className="flex w-full rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
@@ -199,26 +204,26 @@ export function FlashcardsAdminPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">Image URL (Optional)</label>
+              <label className="text-sm font-medium text-geist-gray-1000">Đường dẫn ảnh (Tùy chọn)</label>
               <Input {...register('frontImageUrl')} placeholder="https://..." />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">Audio URL (Optional)</label>
+              <label className="text-sm font-medium text-geist-gray-1000">Đường dẫn âm thanh (Tùy chọn)</label>
               <Input {...register('frontAudioUrl')} placeholder="https://..." />
             </div>
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-geist-gray-1000">Learning Hint</label>
+            <label className="text-sm font-medium text-geist-gray-1000">Gợi ý học tập</label>
             <Input {...register('hint')} />
           </div>
           
           <div className="flex justify-end gap-3 mt-8">
             <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
-              Cancel
+              Hủy
             </Button>
             <Button type="submit" disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? 'Saving...' : 'Save'}
+              {saveMutation.isPending ? 'Đang lưu...' : 'Lưu'}
             </Button>
           </div>
         </form>
