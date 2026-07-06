@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { Plus, Edit2, Trash2, Settings2, Image as ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { message, Modal as AntdModal } from 'antd'; // Keeping message for toast notifications
+import { message, Modal as AntdModal, Switch, Pagination } from 'antd'; // Keeping message for toast notifications
 import { decksApi } from '../api/decks.api';
 import { languagesApi } from '../../master-data/api/languages.api';
 import type { DeckResponse } from '../../../shared/types/lela';
@@ -51,16 +51,18 @@ export function DecksAdminPage() {
   const [pixabayQuery, setPixabayQuery] = useState('');
   const [pixabayResults, setPixabayResults] = useState<any[]>([]);
   const [isPixabayLoading, setIsPixabayLoading] = useState(false);
-  
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormValues>({
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const { register, handleSubmit, reset, watch, setValue, control, formState: { errors } } = useForm<FormValues>({
     defaultValues: { difficulty: 'BEGINNER', visibility: 'PUBLIC', displayMode: 'RANDOM', isFeatured: false, isActive: true, status: 'DRAFT' }
   });
 
   const watchStatus = watch('status');
 
   const { data: decksData, isLoading } = useQuery({
-    queryKey: ['decks-admin'],
-    queryFn: () => decksApi.getAll(),
+    queryKey: ['decks-admin', currentPage, pageSize],
+    queryFn: () => decksApi.getAll({ page: currentPage - 1, size: pageSize }),
   });
 
   const { data: languagesData } = useQuery({
@@ -69,7 +71,7 @@ export function DecksAdminPage() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: (values: FormValues) => 
+    mutationFn: (values: FormValues) =>
       editingDeck ? decksApi.update(editingDeck.id, values) : decksApi.create(values),
     onSuccess: () => {
       message.success(editingDeck ? 'Cập nhật bộ thẻ thành công' : 'Tạo bộ thẻ thành công');
@@ -199,77 +201,95 @@ export function DecksAdminPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-geist-gray-300">
-              {isLoading ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-geist-gray-600">Đang tải...</td></tr>
-              ) : decksData?.content?.map((deck) => (
-                <tr key={deck.id} className="hover:bg-geist-gray-100/50 transition-colors">
-                  <td className="px-4 py-3 font-mono text-geist-gray-900">{deck.id}</td>
-                  <td className="px-4 py-3 text-geist-gray-1000 font-medium">{deck.title}</td>
-                  <td className="px-4 py-3 text-geist-gray-1000">{deck.category}</td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-geist-gray-200 text-geist-gray-800">
-                      {DIFFICULTY_MAP[deck.difficulty] || deck.difficulty}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      deck.status === 'PUBLISHED' ? 'bg-geist-success-100 text-geist-success-800' : 'bg-geist-gray-200 text-geist-gray-800'
-                    }`}>
-                      {STATUS_MAP[deck.status] || deck.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center font-mono font-medium">{deck.totalCards || 0}</td>
-                  <td className="px-4 py-3">
-                    <select
-                      value={deck.displayMode || 'RANDOM'}
-                      onChange={(e) => quickUpdateMutation.mutate({ id: deck.id, data: { displayMode: e.target.value as any } })}
-                      disabled={quickUpdateMutation.isPending}
-                      className="h-7 text-xs rounded border border-geist-gray-300 bg-geist-bg-100 px-2 py-0 focus:outline-none focus:ring-1 focus:ring-geist-blue-700"
-                    >
-                      <option value="FRONT">Từ vựng</option>
-                      <option value="BACK">Ý nghĩa</option>
-                      <option value="RANDOM">Ngẫu nhiên</option>
-                    </select>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/admin/decks/${deck.id}/flashcards`)}>
-                        <Settings2 className="w-3.5 h-3.5 mr-1" />
-                        Thẻ
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => openModal(deck)} title="Chỉnh sửa">
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="text-geist-red-800 hover:text-geist-red-900 hover:bg-geist-red-100"
-                        title="Xóa"
-                        disabled={!hasRole(['ADMIN', 'CONTENT_CREATOR'])}
-                        onClick={() => {
-                          AntdModal.confirm({
-                            title: 'Xác nhận xóa',
-                            content: 'Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa?',
-                            okText: 'Xóa',
-                            cancelText: 'Hủy',
-                            okButtonProps: { danger: true },
-                            onOk: () => deleteMutation.mutate(deck.id),
-                          });
-                        }}
+              {useMemo(() => {
+                if (isLoading) {
+                  return <tr><td colSpan={7} className="px-4 py-8 text-center text-geist-gray-600">Đang tải...</td></tr>;
+                }
+                if (!decksData?.content || decksData.content.length === 0) {
+                  return <tr><td colSpan={7} className="px-4 py-8 text-center text-geist-gray-600">Không tìm thấy bộ thẻ nào</td></tr>;
+                }
+                return decksData.content.map((deck) => (
+                  <tr key={deck.id} className="hover:bg-geist-gray-100/50 transition-colors">
+                    <td className="px-4 py-3 font-mono text-geist-gray-900">{deck.id}</td>
+                    <td className="px-4 py-3 text-geist-gray-1000 font-medium">{deck.title}</td>
+                    <td className="px-4 py-3 text-geist-gray-1000">{deck.category}</td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-geist-gray-200 text-geist-gray-800">
+                        {DIFFICULTY_MAP[deck.difficulty] || deck.difficulty}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${deck.status === 'PUBLISHED' ? 'bg-geist-success-100 text-geist-success-800' : 'bg-geist-gray-200 text-geist-gray-800'
+                        }`}>
+                        {STATUS_MAP[deck.status] || deck.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center font-mono font-medium">{deck.totalCards || 0}</td>
+                    <td className="px-4 py-3">
+                      <select
+                        value={deck.displayMode || 'RANDOM'}
+                        onChange={(e) => quickUpdateMutation.mutate({ id: deck.id, data: { displayMode: e.target.value as any } })}
+                        disabled={quickUpdateMutation.isPending}
+                        className="h-7 text-xs rounded border border-geist-gray-300 bg-geist-bg-100 px-2 py-0 focus:outline-none focus:ring-1 focus:ring-geist-blue-700"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {(!decksData?.content || decksData.content.length === 0) && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-geist-gray-600">Không tìm thấy bộ thẻ nào</td></tr>
-              )}
+                        <option value="FRONT">Từ vựng</option>
+                        <option value="BACK">Ý nghĩa</option>
+                        <option value="RANDOM">Ngẫu nhiên</option>
+                      </select>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => navigate(`/admin/decks/${deck.id}/flashcards`)}>
+                          <Settings2 className="w-3.5 h-3.5 mr-1" />
+                          Thẻ
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => openModal(deck)} title="Chỉnh sửa">
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-geist-red-800 hover:text-geist-red-900 hover:bg-geist-red-100"
+                          title="Xóa"
+                          disabled={!hasRole(['ADMIN', 'CONTENT_CREATOR'])}
+                          onClick={() => {
+                            AntdModal.confirm({
+                              title: 'Xác nhận xóa',
+                              content: 'Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa?',
+                              okText: 'Xóa',
+                              cancelText: 'Hủy',
+                              okButtonProps: { danger: true },
+                              onOk: () => deleteMutation.mutate(deck.id),
+                            });
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ));
+              }, [isLoading, decksData?.content, hasRole, quickUpdateMutation.isPending])}
             </tbody>
           </table>
         </div>
       </div>
+
+      {decksData && decksData.totalElements > 0 && (
+        <div className="flex justify-end mt-4">
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={decksData.totalElements}
+            onChange={(page, size) => {
+              setCurrentPage(page);
+              setPageSize(size);
+            }}
+            showSizeChanger
+            showTotal={(total) => `Tổng ${total} bộ thẻ`}
+          />
+        </div>
+      )}
 
       <Modal
         title={editingDeck ? 'Chỉnh sửa bộ thẻ' : 'Thêm bộ thẻ'}
@@ -294,20 +314,20 @@ export function DecksAdminPage() {
             <Input {...register('title', { required: true })} />
             {errors.title && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-sm font-medium text-geist-gray-1000">Mô tả</label>
-            <textarea 
-              {...register('description')} 
+            <textarea
+              {...register('description')}
               className="flex w-full resize-none rounded-md border border-geist-gray-400 bg-transparent px-3 py-2 text-sm text-geist-gray-1000 placeholder:text-geist-gray-600 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
               rows={3}
             />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-geist-gray-1000">Ngôn ngữ</label>
-              <select 
+              <select
                 {...register('languageId', { required: true })}
                 className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-geist-bg-100 px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
               >
@@ -324,11 +344,11 @@ export function DecksAdminPage() {
               {errors.category && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-geist-gray-1000">Độ khó</label>
-              <select 
+              <select
                 {...register('difficulty', { required: true })}
                 className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-geist-bg-100 px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
               >
@@ -339,7 +359,7 @@ export function DecksAdminPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-geist-gray-1000">Hiển thị</label>
-              <select 
+              <select
                 {...register('visibility', { required: true })}
                 className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-geist-bg-100 px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
               >
@@ -349,7 +369,7 @@ export function DecksAdminPage() {
               </select>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-sm font-medium text-geist-gray-1000">Đường dẫn ảnh bìa</label>
             <div className="flex gap-2">
@@ -359,17 +379,17 @@ export function DecksAdminPage() {
               </Button>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-sm font-medium text-geist-gray-1000">Chế độ hiển thị thẻ</label>
             <div className="flex gap-4 p-1">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" value="FRONT" {...register('displayMode')} className="w-4 h-4 text-geist-blue-700 border-geist-gray-400 focus:ring-geist-blue-700 bg-transparent" />
-                <span className="text-sm text-geist-gray-1000">Mặt trước (Từ vựng)</span>
+                <span className="text-sm text-geist-gray-1000">Từ vựng trước</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" value="BACK" {...register('displayMode')} className="w-4 h-4 text-geist-blue-700 border-geist-gray-400 focus:ring-geist-blue-700 bg-transparent" />
-                <span className="text-sm text-geist-gray-1000">Mặt sau (Ý nghĩa)</span>
+                <span className="text-sm text-geist-gray-1000">Ý nghĩa trước</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" value="RANDOM" {...register('displayMode')} className="w-4 h-4 text-geist-blue-700 border-geist-gray-400 focus:ring-geist-blue-700 bg-transparent" />
@@ -380,11 +400,11 @@ export function DecksAdminPage() {
 
           <div className="pt-4 border-t border-geist-gray-300">
             <h3 className="text-sm font-semibold text-geist-gray-1000 mb-4">Cấu hình Quản trị (Admin)</h3>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-geist-gray-1000">Trạng thái kiểm duyệt</label>
-                <select 
+                <select
                   {...register('status')}
                   className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-geist-bg-100 px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
                 >
@@ -396,15 +416,27 @@ export function DecksAdminPage() {
                 </select>
               </div>
 
-              <div className="flex flex-col gap-4 mt-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" {...register('isFeatured')} className="w-4 h-4 rounded text-geist-blue-700 border-geist-gray-400 focus:ring-geist-blue-700" />
-                  <span className="text-sm font-medium text-geist-gray-1000">Nổi bật (Hiển thị lên trang chủ)</span>
+              <div className="flex flex-row items-center gap-6 mt-2 lg:mt-9">
+                <label className="flex items-center gap-3 cursor-pointer text-sm font-medium text-geist-gray-1000">
+                  <Controller
+                    name="isFeatured"
+                    control={control}
+                    render={({ field }) => (
+                      <Switch size="small" checked={field.value} onChange={field.onChange} />
+                    )}
+                  />
+                  Nổi bật
                 </label>
-                
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" {...register('isActive')} className="w-4 h-4 rounded text-geist-blue-700 border-geist-gray-400 focus:ring-geist-blue-700" />
-                  <span className="text-sm font-medium text-geist-gray-1000">Hoạt động (Không bị khoá)</span>
+
+                <label className="flex items-center gap-3 cursor-pointer text-sm font-medium text-geist-gray-1000">
+                  <Controller
+                    name="isActive"
+                    control={control}
+                    render={({ field }) => (
+                      <Switch size="small" checked={field.value} onChange={field.onChange} />
+                    )}
+                  />
+                  Hoạt động
                 </label>
               </div>
             </div>
@@ -412,8 +444,8 @@ export function DecksAdminPage() {
             {watchStatus === 'REJECTED' && (
               <div className="space-y-2 mt-4">
                 <label className="text-sm font-medium text-geist-red-800">Lý do từ chối (Gửi cho người tạo)</label>
-                <textarea 
-                  {...register('rejectionReason')} 
+                <textarea
+                  {...register('rejectionReason')}
                   className="flex w-full resize-none rounded-md border border-geist-red-400 bg-geist-red-100/10 px-3 py-2 text-sm text-geist-gray-1000 placeholder:text-geist-gray-600 focus:outline-none focus:ring-2 focus:ring-geist-red-700 transition-colors"
                   rows={2}
                   placeholder="Vui lòng cho biết tại sao bộ thẻ này bị từ chối..."
@@ -421,8 +453,8 @@ export function DecksAdminPage() {
               </div>
             )}
           </div>
-          
-          
+
+
         </form>
       </Modal>
 
@@ -434,7 +466,7 @@ export function DecksAdminPage() {
       >
         <div className="mt-4">
           <form onSubmit={handleSearchPixabay} className="flex gap-2 mb-6">
-            <Input 
+            <Input
               value={pixabayQuery}
               onChange={(e) => setPixabayQuery(e.target.value)}
               placeholder="Nhập từ khóa tìm kiếm..."
@@ -451,14 +483,14 @@ export function DecksAdminPage() {
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto p-1">
               {pixabayResults.map((img: any) => (
-                <div 
-                  key={img.id} 
+                <div
+                  key={img.id}
                   className="cursor-pointer rounded-md overflow-hidden border border-geist-gray-200 hover:-translate-y-1 transition-transform group relative"
                   onClick={() => selectPixabayImage(img.webformatURL)}
                 >
-                  <img 
-                    src={img.webformatURL} 
-                    alt={img.tags} 
+                  <img
+                    src={img.webformatURL}
+                    alt={img.tags}
                     className="w-full h-32 object-cover"
                     loading="lazy"
                   />

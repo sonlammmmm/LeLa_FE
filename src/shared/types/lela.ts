@@ -134,6 +134,7 @@ export interface QuizResponse {
   passScore?: number;
   createdAt: string;
   updatedAt: string;
+  questions?: QuizQuestionResponse[];
 }
 
 export type QuestionType = 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'FILL_IN_THE_BLANK';

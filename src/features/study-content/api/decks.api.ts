@@ -3,7 +3,13 @@ import type { DeckResponse, Page } from '../../../shared/types/lela';
 
 export const decksApi = {
   getAll: async (params?: { page?: number; size?: number; sortBy?: string; direction?: string }): Promise<Page<DeckResponse>> => {
-    const res = await apiClient.get<Page<DeckResponse>>('/decks', { params });
+    const apiParams: any = { ...params };
+    if (params?.sortBy) {
+      apiParams.sort = `${params.sortBy},${params.direction || 'asc'}`;
+      delete apiParams.sortBy;
+      delete apiParams.direction;
+    }
+    const res = await apiClient.get<Page<DeckResponse>>('/decks', { params: apiParams });
     return res.data;
   },
   getById: async (id: number): Promise<DeckResponse> => {

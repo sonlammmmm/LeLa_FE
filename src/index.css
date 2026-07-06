@@ -243,3 +243,17 @@ body {
     --color-geist-success-100: var(--geist-success-100);
     --color-geist-success-800: var(--geist-success-800);
   }
+
+  /* Fix Ant Design Switch in dark mode */
+  .dark .ant-switch {
+    background: var(--geist-gray-400) !important;
+  }
+  .dark .ant-switch:hover:not(.ant-switch-disabled) {
+    background: var(--geist-gray-500) !important;
+  }
+  .dark .ant-switch.ant-switch-checked {
+    background: var(--geist-blue-700) !important;
+  }
+  .dark .ant-switch.ant-switch-checked:hover:not(.ant-switch-disabled) {
+    background: var(--geist-blue-600) !important;
+  }

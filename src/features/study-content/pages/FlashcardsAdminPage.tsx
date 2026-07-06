@@ -1,9 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { Plus, Edit2, Trash2, ArrowLeft, Upload, Wand2, Volume2, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, ArrowLeft, Upload, Wand2, Volume2, Image as ImageIcon, GripVertical } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { message, Modal as AntdModal } from 'antd'; // Keeping message for toast notifications
+import { message, Modal as AntdModal, Pagination } from 'antd'; // Keeping message for toast notifications
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { flashcardsApi } from '../api/flashcards.api';
 import { tagsApi } from '../../master-data/api/tags.api';
 import type { FlashcardResponse } from '../../../shared/types/lela';
@@ -35,6 +38,82 @@ const CARD_COLORS = [
   { value: 'bg-[#8338EC]', label: 'Violet' }
 ];
 
+function SortableRow({ card, openModal, deleteMutation, onManualReorder }: any) {
+  const [inputValue, setInputValue] = useState(card.cardOrder);
+  
+  useEffect(() => {
+    setInputValue(card.cardOrder);
+  }, [card.cardOrder]);
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: card.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+    position: isDragging ? 'relative' as any : 'static' as any,
+  };
+
+  return (
+    <tr ref={setNodeRef} style={style} className={`hover:bg-geist-gray-100/50 transition-colors ${isDragging ? 'bg-geist-bg-100 shadow-md ring-1 ring-geist-gray-300' : ''}`}>
+      <td className="px-4 py-3">
+        <button {...attributes} {...listeners} className="p-1 cursor-grab active:cursor-grabbing text-geist-gray-400 hover:text-geist-gray-700 rounded transition-colors touch-none">
+          <GripVertical className="w-4 h-4" />
+        </button>
+      </td>
+      <td className="px-4 py-3 font-mono text-geist-gray-900">{card.id}</td>
+      <td className="px-4 py-3">
+        <input 
+          type="number" 
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          className="w-16 h-7 px-2 text-xs border border-geist-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-geist-blue-500 bg-transparent"
+          onBlur={() => {
+            const val = parseInt(inputValue, 10);
+            if (!isNaN(val) && val !== card.cardOrder) {
+              onManualReorder(card, val);
+            } else {
+              setInputValue(card.cardOrder);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.currentTarget.blur();
+            }
+          }}
+        />
+      </td>
+      <td className="px-4 py-3 text-geist-gray-1000 font-medium whitespace-pre-wrap max-w-xs">{card.frontText}</td>
+      <td className="px-4 py-3 text-geist-gray-1000 whitespace-pre-wrap max-w-xs">{card.backText}</td>
+      <td className="px-4 py-3 text-geist-gray-700">{card.phonetic}</td>
+      <td className="px-4 py-3">
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="ghost" size="icon" onClick={() => openModal(card)} title="Chỉnh sửa">
+            <Edit2 className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-geist-red-800 hover:text-geist-red-900 hover:bg-geist-red-100"
+            title="Xóa"
+            onClick={() => {
+              AntdModal.confirm({
+                title: 'Xác nhận xóa',
+                content: 'Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa?',
+                okText: 'Xóa',
+                cancelText: 'Hủy',
+                okButtonProps: { danger: true },
+                onOk: () => deleteMutation.mutate(card.id),
+              });
+            }}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export function FlashcardsAdminPage() {
   const { deckId } = useParams<{ deckId: string }>();
   const navigate = useNavigate();
@@ -51,14 +130,29 @@ export function FlashcardsAdminPage() {
   const [isPreviewFlipped, setIsPreviewFlipped] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [isCreatingTag, setIsCreatingTag] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
   const { register, handleSubmit, reset, watch, setValue, getValues, formState: { errors } } = useForm<FormValues>();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['flashcards', deckId],
-    queryFn: () => flashcardsApi.getByDeckId(Number(deckId)),
+    queryKey: ['flashcards', deckId, currentPage, pageSize],
+    queryFn: () => flashcardsApi.getByDeckId(Number(deckId), { page: currentPage - 1, size: pageSize, sortBy: 'cardOrder', direction: 'asc' }),
     enabled: !!deckId,
   });
+
+  const [localCardsState, setLocalCardsState] = useState<FlashcardResponse[]>([]);
+  
+  useEffect(() => {
+    if (data?.content) {
+      setLocalCardsState(data.content);
+    }
+  }, [data?.content]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const { data: tagsData } = useQuery({
     queryKey: ['tags'],
@@ -88,6 +182,43 @@ export function FlashcardsAdminPage() {
     },
     onError: (err: any) => message.error(err.response?.data?.message || 'Có lỗi xảy ra'),
   });
+
+  const reorderMutation = useMutation({
+    mutationFn: (cardIds: number[]) => flashcardsApi.reorder(Number(deckId), cardIds),
+    onSuccess: () => {
+      message.success('Cập nhật thứ tự thành công');
+      queryClient.invalidateQueries({ queryKey: ['flashcards', deckId] });
+    },
+    onError: () => message.error('Lỗi khi sắp xếp thẻ'),
+  });
+
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = localCardsState.findIndex((i: FlashcardResponse) => i.id === active.id);
+      const newIndex = localCardsState.findIndex((i: FlashcardResponse) => i.id === over.id);
+      const newItems = arrayMove(localCardsState, oldIndex, newIndex);
+      
+      const newOrderIds = newItems.map((item: FlashcardResponse) => item.id);
+      reorderMutation.mutate(newOrderIds);
+      
+      setLocalCardsState(newItems);
+    }
+  };
+
+  const handleManualReorder = (card: FlashcardResponse, newValue: number) => {
+    let newIndex = newValue;
+    if (newIndex < 0) newIndex = 0;
+    if (newIndex >= localCardsState.length) newIndex = localCardsState.length - 1;
+    
+    const oldIndex = localCardsState.findIndex(c => c.id === card.id);
+    if (oldIndex !== -1 && oldIndex !== newIndex) {
+      const newItems = arrayMove(localCardsState, oldIndex, newIndex);
+      const newOrderIds = newItems.map(item => item.id);
+      reorderMutation.mutate(newOrderIds);
+      setLocalCardsState(newItems);
+    }
+  };
 
   const importMutation = useMutation({
     mutationFn: (values: FormValues[]) => fetch('/api/v1/flashcards/bulk', {
@@ -314,6 +445,18 @@ export function FlashcardsAdminPage() {
     saveMutation.mutate(payload as FormValues);
   };
 
+  const handleDownloadTemplate = () => {
+    const csvContent = "frontText,backText,phonetic,exampleText,hint,frontImageUrl,frontAudioUrl,cardColor\nHello,Xin chào,həˈləʊ,Hello world,Chào,,,bg-brand-coral\nApple,Quả táo,ˈæp.əl,I eat an apple,Táo,,,bg-brand-coral";
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "flashcards_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="max-w-7xl">
       <div className="mb-6 flex items-center gap-4">
@@ -347,7 +490,9 @@ export function FlashcardsAdminPage() {
           <table className="w-full text-sm text-left">
             <thead className="bg-geist-gray-100 text-geist-gray-700 font-medium border-b border-geist-gray-300">
               <tr>
+                <th className="px-4 py-3 w-10"></th>
                 <th className="px-4 py-3">ID</th>
+                <th className="px-4 py-3">Thứ tự</th>
                 <th className="px-4 py-3">Mặt trước</th>
                 <th className="px-4 py-3">Mặt sau</th>
                 <th className="px-4 py-3">Phiên âm</th>
@@ -356,43 +501,25 @@ export function FlashcardsAdminPage() {
             </thead>
             <tbody className="divide-y divide-geist-gray-300">
               {isLoading ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-geist-gray-600">Đang tải...</td></tr>
-              ) : data?.content?.map((card) => (
-                <tr key={card.id} className="hover:bg-geist-gray-100/50 transition-colors">
-                  <td className="px-4 py-3 font-mono text-geist-gray-900">{card.id}</td>
-                  <td className="px-4 py-3 text-geist-gray-1000 font-medium whitespace-pre-wrap max-w-xs">{card.frontText}</td>
-                  <td className="px-4 py-3 text-geist-gray-1000 whitespace-pre-wrap max-w-xs">{card.backText}</td>
-                  <td className="px-4 py-3 text-geist-gray-700">{card.phonetic}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => openModal(card)} title="Chỉnh sửa">
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-geist-red-800 hover:text-geist-red-900 hover:bg-geist-red-100"
-                        title="Xóa"
-                        onClick={() => {
-                          AntdModal.confirm({
-                            title: 'Xác nhận xóa',
-                            content: 'Hành động này không thể hoàn tác. Bạn có chắc chắn muốn xóa?',
-                            okText: 'Xóa',
-                            cancelText: 'Hủy',
-                            okButtonProps: { danger: true },
-                            onOk: () => deleteMutation.mutate(card.id),
-                          });
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {(!data?.content || data.content.length === 0) && (
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-geist-gray-600">Đang tải...</td></tr>
+              ) : (
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                  <SortableContext items={localCardsState.map((c: FlashcardResponse) => c.id)} strategy={verticalListSortingStrategy}>
+                    {localCardsState.map((card: FlashcardResponse) => (
+                      <SortableRow 
+                        key={card.id} 
+                        card={card} 
+                        openModal={openModal} 
+                        deleteMutation={deleteMutation} 
+                        onManualReorder={handleManualReorder} 
+                      />
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              )}
+              {(!localCardsState || localCardsState.length === 0) && !isLoading && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-16 text-center bg-geist-bg-100">
+                  <td colSpan={7} className="px-4 py-16 text-center bg-geist-bg-100">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-geist-gray-100 flex items-center justify-center">
                         <ImageIcon className="w-6 h-6 text-geist-gray-400" />
@@ -412,6 +539,23 @@ export function FlashcardsAdminPage() {
           </table>
         </div>
       </div>
+
+      {data && data.totalElements > 0 && (
+        <div className="flex justify-end mt-4">
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={data.totalElements}
+            onChange={(page, size) => {
+              setCurrentPage(page);
+              setPageSize(size);
+            }}
+            showSizeChanger
+            pageSizeOptions={['10', '20', '50', '100']}
+            showTotal={(total) => `Tổng ${total} thẻ`}
+          />
+        </div>
+      )}
 
       <Modal
         title={editingCard ? 'Chỉnh sửa thẻ' : 'Thêm thẻ'}
@@ -634,7 +778,12 @@ export function FlashcardsAdminPage() {
         onClose={() => setIsImportModalOpen(false)}
       >
         <div className="mt-4 space-y-4">
-          <p className="text-sm text-geist-gray-700">Tải lên file JSON hoặc CSV để thêm hàng loạt thẻ vào bộ bài. File cần có các cột: frontText, backText, phonetic (tùy chọn), exampleText (tùy chọn).</p>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <p className="text-sm text-geist-gray-700">Tải lên file JSON hoặc CSV để thêm hàng loạt thẻ vào bộ bài.</p>
+            <Button variant="outline" size="sm" onClick={handleDownloadTemplate} className="shrink-0">
+              Tải file mẫu (CSV)
+            </Button>
+          </div>
           <div className="flex items-center justify-center w-full">
             <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-geist-gray-400 border-dashed rounded-lg cursor-pointer bg-geist-bg-100 hover:bg-geist-gray-100 transition-colors">
               <div className="flex flex-col items-center justify-center pt-5 pb-6">

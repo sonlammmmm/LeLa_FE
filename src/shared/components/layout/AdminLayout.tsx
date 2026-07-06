@@ -29,60 +29,18 @@ export function AdminLayout() {
   ];
 
   return (
-    <div className="min-h-screen bg-geist-bg-100 text-geist-gray-1000 font-sans selection:bg-geist-blue-200">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-geist-gray-400 bg-geist-bg-100/80 px-6 backdrop-blur-md">
-        <div className="flex items-center gap-4">
-          <Link to="/admin/dashboard" className="text-xl font-bold tracking-tight">
-            LeLa<span className="text-geist-gray-600">Admin</span>
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="flex items-center rounded-full border border-geist-gray-400 bg-geist-bg-200 p-1">
-            <button
-              onClick={() => setTheme('light')}
-              className={`rounded-full p-1.5 transition-colors ${theme === 'light' ? 'bg-geist-bg-100 shadow-sm text-geist-gray-1000' : 'text-geist-gray-700 hover:text-geist-gray-1000'}`}
-              title="Giao diện sáng"
-            >
-              <Sun className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setTheme('system')}
-              className={`rounded-full p-1.5 transition-colors ${theme === 'system' ? 'bg-geist-bg-100 shadow-sm text-geist-gray-1000' : 'text-geist-gray-700 hover:text-geist-gray-1000'}`}
-              title="Giao diện hệ thống"
-            >
-              <Monitor className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setTheme('dark')}
-              className={`rounded-full p-1.5 transition-colors ${theme === 'dark' ? 'bg-geist-bg-100 shadow-sm text-geist-gray-1000' : 'text-geist-gray-700 hover:text-geist-gray-1000'}`}
-              title="Giao diện tối"
-            >
-              <Moon className="h-4 w-4" />
-            </button>
+    <div className="flex min-h-screen bg-geist-bg-100 text-geist-gray-1000 font-sans selection:bg-geist-blue-200">
+      {/* Sidebar */}
+      <aside className="w-64 sticky top-0 h-screen shrink-0 border-r border-geist-gray-300 overflow-y-auto hidden md:flex md:flex-col bg-geist-bg-100">
+        {/* Top Section: Logo + Nav */}
+        <div className="flex flex-col">
+          <div className="h-16 flex items-center px-6 border-b border-geist-gray-300">
+            <Link to="/admin/dashboard" className="text-xl font-bold tracking-tight">
+              LeLa<span className="text-geist-gray-600">Admin</span>
+            </Link>
           </div>
-
-          <div className="flex items-center gap-3 pl-4 border-l border-geist-gray-400">
-            <div className="flex flex-col items-end">
-              <span className="text-sm font-medium leading-none">{user?.fullName || user?.username}</span>
-              <span className="text-xs text-geist-gray-700 mt-1">{user?.roles.join(', ')}</span>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="rounded-md p-2 text-geist-gray-700 hover:bg-geist-gray-200 hover:text-geist-gray-1000 transition-colors"
-              title="Đăng xuất"
-            >
-              <LogOut className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex px-6">
-        {/* Sidebar */}
-        <aside className="w-48 shrink-0 py-8 pr-6">
-          <nav className="flex flex-col gap-1">
+          
+          <nav className="flex flex-col gap-1 p-4">
             {navItems.map((item) => {
               // Ensure user has at least one of the required roles
               const canAccess = hasRole(item.roles);
@@ -107,13 +65,54 @@ export function AdminLayout() {
               );
             })}
           </nav>
-        </aside>
+        </div>
 
-        {/* Main Content */}
-        <main className="flex-1 py-8 pl-6 border-l border-geist-gray-300 min-h-[calc(100vh-4rem)]">
-          <Outlet />
-        </main>
-      </div>
+        {/* Bottom Section: Theme & User */}
+        <div className="mt-auto border-t border-geist-gray-300 p-4 flex flex-col gap-4 bg-geist-bg-100">
+          <div className="flex items-center justify-between rounded-full border border-geist-gray-400 bg-geist-bg-200 p-1">
+            <button
+              onClick={() => setTheme('light')}
+              className={`flex-1 flex justify-center rounded-full p-1.5 transition-colors ${theme === 'light' ? 'bg-geist-bg-100 shadow-sm text-geist-gray-1000' : 'text-geist-gray-700 hover:text-geist-gray-1000'}`}
+              title="Giao diện sáng"
+            >
+              <Sun className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setTheme('system')}
+              className={`flex-1 flex justify-center rounded-full p-1.5 transition-colors ${theme === 'system' ? 'bg-geist-bg-100 shadow-sm text-geist-gray-1000' : 'text-geist-gray-700 hover:text-geist-gray-1000'}`}
+              title="Giao diện hệ thống"
+            >
+              <Monitor className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setTheme('dark')}
+              className={`flex-1 flex justify-center rounded-full p-1.5 transition-colors ${theme === 'dark' ? 'bg-geist-bg-100 shadow-sm text-geist-gray-1000' : 'text-geist-gray-700 hover:text-geist-gray-1000'}`}
+              title="Giao diện tối"
+            >
+              <Moon className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium leading-none truncate max-w-[140px]">{user?.fullName || user?.username}</span>
+              <span className="text-xs text-geist-gray-700 mt-1 truncate max-w-[140px]">{user?.roles.join(', ')}</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="rounded-md p-2 text-geist-gray-700 hover:bg-geist-gray-200 hover:text-geist-gray-1000 transition-colors shrink-0"
+              title="Đăng xuất"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 py-8 px-6 lg:px-8 min-h-screen">
+        <Outlet />
+      </main>
     </div>
   );
 }
