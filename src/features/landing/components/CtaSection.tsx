@@ -7,7 +7,7 @@ interface Props {
 export function CtaSection({ onAction }: Props) {
   return (
     <section className="w-full bg-brand-navy py-32 border-y-[3px] border-brand-black">
-      <div className="mx-auto max-w-[800px] px-6 lg:px-12 text-center">
+      <div className="mx-auto max-w-[1000px] px-6 lg:px-12 text-center">
         <h2 className="text-5xl md:text-6xl font-extrabold tracking-tight text-white mb-8">
           Sẵn sàng mở rộng vốn từ?
         </h2>

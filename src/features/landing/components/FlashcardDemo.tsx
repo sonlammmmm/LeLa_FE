@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { Repeat } from "lucide-react";
+import { Repeat, Volume2 } from "lucide-react";
 
 interface Props {
   playSound?: () => void;
@@ -18,6 +18,17 @@ export function FlashcardDemo({ playSound }: Props) {
   const handleAction = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (playSound) playSound();
+  };
+
+  const handleSpeak = (e: React.MouseEvent, text: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   return (
@@ -52,6 +63,13 @@ export function FlashcardDemo({ playSound }: Props) {
                 className="absolute inset-0 brutal-card bg-white p-8 flex flex-col items-center justify-center text-center"
                 style={{ backfaceVisibility: "hidden" }}
               >
+                <button
+                  className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center bg-[#2A8B9D] hover:bg-[#1D2A3A] active:translate-y-1 active:shadow-[2px_2px_0px_0px_#000] border-[2px] border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-white rounded-full transition-all cursor-pointer z-10"
+                  onClick={(e) => handleSpeak(e, 'Serendipity')}
+                  title="Phát âm"
+                >
+                  <Volume2 className="w-5 h-5" strokeWidth={2.5} />
+                </button>
                 <div className="text-sm font-bold text-brand-navy/50 mb-auto tracking-widest uppercase">
                   Vocabulary
                 </div>

@@ -16,6 +16,11 @@ export interface UserInfo {
   fullName?: string;
   email: string;
   roles: UserRole[];
+  timezone?: string;
+  dailyGoalCards?: number;
+  nativeLanguageId?: number;
+  targetLanguageId?: number;
+  promptDailyGoal?: boolean;
 }
 
 export interface AuthResponse {

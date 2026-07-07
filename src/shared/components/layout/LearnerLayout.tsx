@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notificationsApi } from '../../../features/notifications/api/notifications.api';
 import bubblePopSound from '../../../assets/sounds/bubble-pop.mp3';
 import { useRealtimeMetadata } from '../../hooks/useRealtimeMetadata';
+import { DailyGoalPromptModal } from '../../../features/users/components/DailyGoalPromptModal';
 
 export function LearnerLayout() {
   useRealtimeMetadata();
@@ -159,17 +160,7 @@ export function LearnerLayout() {
         <Outlet />
       </main>
 
-      {/* Footer */}
-      <footer className="w-full bg-white py-8 border-t-[3px] border-brand-black mt-auto">
-        <div className="mx-auto max-w-[1400px] px-6 lg:px-12 flex flex-col md:flex-row justify-between items-center">
-          <div className="text-brand-navy font-bold text-lg mb-4 md:mb-0">
-            LeLa - Học ngoại ngữ bằng Flashcard
-          </div>
-          <div className="text-brand-navy/60 font-medium">
-            © 2026 LeLa Project. Soft Brutalism design.
-          </div>
-        </div>
-      </footer>
+      <DailyGoalPromptModal />
     </div>
   );
 }

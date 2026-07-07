@@ -29,7 +29,7 @@ export const neoBrutalismTheme = {
 
 export function LearnerThemeProvider({ children }: { children: React.ReactNode }) {
   return (
-    <ConfigProvider theme={neoBrutalismTheme}>
+    <ConfigProvider theme={neoBrutalismTheme} wave={{ disabled: true }}>
       {children}
     </ConfigProvider>
   );

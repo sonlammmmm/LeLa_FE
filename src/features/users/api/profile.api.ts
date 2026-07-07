@@ -16,6 +16,7 @@ export interface UserResponse {
   timezone: string;
   nativeLanguageId?: number;
   targetLanguageId?: number;
+  promptDailyGoal?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -27,16 +28,17 @@ export interface ProfileUpdateRequest {
   dailyGoalCards?: number;
   nativeLanguageId?: number;
   targetLanguageId?: number;
+  promptDailyGoal?: boolean;
 }
 
 export const profileApi = {
   getMe: async (): Promise<ApiResponse<UserResponse>> => {
-    const response = await apiClient.get('/profile');
+    const response = await apiClient.get('/auth/profile');
     return response.data;
   },
 
   updateMe: async (data: ProfileUpdateRequest): Promise<ApiResponse<UserResponse>> => {
-    const response = await apiClient.patch('/profile', data);
+    const response = await apiClient.patch('/auth/profile', data);
     return response.data;
   },
 };

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { HeroSection } from "../components/HeroSection";
 import { BentoFeatures } from "../components/BentoFeatures";
 import { FlashcardDemo } from "../components/FlashcardDemo";
@@ -6,15 +5,12 @@ import { CtaSection } from "../components/CtaSection";
 import { BackgroundPattern } from "../components/BackgroundPattern";
 import { Button } from "antd";
 import { useNavigate } from "react-router-dom";
-import { AuthModal } from "../../auth/components/AuthModal";
 
 // We assume the asset is available to import
 import bubblePopSound from "../../../assets/sounds/bubble-pop.mp3";
 
 export function LandingPage() {
   const navigate = useNavigate();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authView, setAuthView] = useState<'login' | 'register'>('login');
   
   const playSound = () => {
     const audio = new Audio(bubblePopSound);
@@ -23,10 +19,7 @@ export function LandingPage() {
 
   const handleNav = (path: string) => {
     playSound();
-    if (path === '/login') {
-      setAuthView('login');
-      setIsAuthModalOpen(true);
-    } else if (path.startsWith('#')) {
+    if (path.startsWith('#')) {
        document.querySelector(path)?.scrollIntoView({ behavior: 'smooth' });
     } else {
        navigate(path);
@@ -47,16 +40,17 @@ export function LandingPage() {
             </div>
             <span className="text-2xl font-black text-brand-navy tracking-tight ml-2">LeLa</span>
           </div>
-          <nav className="hidden md:flex items-center gap-8 font-bold text-brand-navy">
-            <a href="#features" className="hover:text-brand-coral transition-colors" onClick={(e) => { e.preventDefault(); handleNav('#features'); }}>Tính năng</a>
-            <a href="#demo" className="hover:text-brand-coral transition-colors" onClick={(e) => { e.preventDefault(); handleNav('#demo'); }}>Dùng thử</a>
+          <nav className="hidden md:flex items-center gap-8 font-bold">
+            <a href="#features" className="!text-brand-navy hover:!text-[#006bff] transition-colors" onClick={(e) => { e.preventDefault(); handleNav('#features'); }}>Tính năng</a>
+            <a href="#demo" className="!text-brand-navy hover:!text-[#006bff] transition-colors" onClick={(e) => { e.preventDefault(); handleNav('#demo'); }}>Dùng thử</a>
+            <a href="/decks" className="!text-brand-navy hover:!text-[#006bff] transition-colors" onClick={(e) => { e.preventDefault(); handleNav('/decks'); }}>Khám phá</a>
           </nav>
           <div className="flex items-center gap-4">
             <Button onClick={() => handleNav('/login')} className="hidden md:inline-flex font-bold brutal-border brutal-pill bg-white text-brand-navy hover:-translate-y-0.5 transition-transform">
               Đăng nhập
             </Button>
             <Button 
-              onClick={() => handleNav('/login')}
+              onClick={() => handleNav('/register')}
               type="primary" 
               className="font-bold brutal-border brutal-pill bg-brand-coral text-white hover:-translate-y-0.5 transition-transform"
             >
@@ -89,12 +83,6 @@ export function LandingPage() {
         </div>
       </footer>
 
-      {/* Auth Modal */}
-      <AuthModal 
-        open={isAuthModalOpen} 
-        onCancel={() => setIsAuthModalOpen(false)} 
-        defaultView={authView}
-      />
     </div>
   );
 }

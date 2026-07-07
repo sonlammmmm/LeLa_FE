@@ -7,10 +7,12 @@ import { flashcardsApi } from '../api/flashcards.api';
 import { deckEnrollmentsApi } from '../api/deck-enrollments.api';
 import { quizzesApi } from '../../quiz/api/quizzes.api';
 import { quizAttemptsApi } from '../../quiz/api/quiz-attempts.api';
+import { useAuth } from '../../../shared/providers/AuthProvider';
 
 export function DeckDetailPage() {
   const { deckId } = useParams<{ deckId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleSpeak = (e: React.MouseEvent, text: string) => {
     e.stopPropagation();
@@ -38,7 +40,7 @@ export function DeckDetailPage() {
   const { data: enrollmentsPage } = useQuery({
     queryKey: ['my-enrollments'],
     queryFn: () => deckEnrollmentsApi.getMyList({ size: 100 }),
-    enabled: !!deckId,
+    enabled: !!deckId && !!user,
   });
 
   const { data: quizzesResp } = useQuery({
@@ -50,7 +52,7 @@ export function DeckDetailPage() {
   const { data: attemptsResp } = useQuery({
     queryKey: ['my-quiz-attempts', deckId],
     queryFn: () => quizAttemptsApi.getMyAttempts({ size: 100 }),
-    enabled: !!deckId,
+    enabled: !!deckId && !!user,
   });
 
   const enrollment = enrollmentsPage?.data?.content?.find(e => e.deckId === Number(deckId));
@@ -123,7 +125,7 @@ export function DeckDetailPage() {
                 </div>
                 <Button 
                   className="w-full md:w-auto brutal-pill font-black uppercase h-12 px-10 bg-[#2A8B9D] text-white hover:-translate-y-1 transition-transform text-lg border-black shrink-0"
-                  onClick={() => navigate(`/study/${deck.id}`)}
+                  onClick={() => user ? navigate(`/study/${deck.id}`) : navigate('/login')}
                 >
                   TIẾP TỤC HỌC
                 </Button>
@@ -131,7 +133,7 @@ export function DeckDetailPage() {
             ) : (
               <Button 
                 className="w-full md:w-auto brutal-pill font-black uppercase h-14 px-12 bg-[#F05A4A] text-white hover:-translate-y-1 transition-transform text-xl border-black"
-                onClick={() => navigate(`/study/${deck.id}`)}
+                onClick={() => user ? navigate(`/study/${deck.id}`) : navigate('/login')}
               >
                 HỌC BỘ THẺ NÀY
               </Button>
@@ -168,7 +170,7 @@ export function DeckDetailPage() {
                   </div>
                   <Button 
                     className="brutal-pill font-black h-12 px-8 uppercase !bg-[#1D2A3A] !text-white hover:!bg-[#2A8B9D] transition-colors w-full sm:w-auto"
-                    onClick={() => navigate(`/quiz/${quiz.id}/start`)}
+                    onClick={() => user ? navigate(`/quiz/${quiz.id}/start`) : navigate('/login')}
                   >
                     Làm bài
                   </Button>

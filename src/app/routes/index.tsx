@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { LearnerLayout } from '../../shared/components/layout/LearnerLayout';
 import { AdminLayout } from '../../shared/components/layout/AdminLayout';
@@ -33,6 +33,10 @@ const LearnerDashboardPage = lazy(() => import('../../features/dashboard/pages/L
 const PricingPage = lazy(() => import('../../features/subscription/pages/PricingPage').then(module => ({ default: module.PricingPage })));
 const AdminDashboardPage = lazy(() => import('../../features/dashboard/pages/AdminDashboardPage').then(module => ({ default: module.AdminDashboardPage })));
 
+const LoginPage = lazy(() => import('../../features/auth/pages/LoginPage').then(module => ({ default: module.LoginPage })));
+const RegisterPage = lazy(() => import('../../features/auth/pages/RegisterPage').then(module => ({ default: module.RegisterPage })));
+
+
 const Unauthorized = () => <div className="min-h-screen flex items-center justify-center text-2xl font-bold text-red-500">Unauthorized</div>;
 
 const PageLoader = () => (
@@ -47,19 +51,18 @@ export function AppRoutes() {
       <Routes>
       {/* Public routes */}
       <Route path="/" element={<LearnerThemeProvider><LandingPage /></LearnerThemeProvider>} />
-      {/* Legacy auth routes redirect to home where modal can be triggered */}
-      <Route path="/login" element={<Navigate to="/" replace />} />
-      <Route path="/register" element={<Navigate to="/" replace />} />
+      <Route path="/login" element={<LearnerThemeProvider><LoginPage /></LearnerThemeProvider>} />
+      <Route path="/register" element={<LearnerThemeProvider><RegisterPage /></LearnerThemeProvider>} />
       <Route path="/pricing" element={<LearnerThemeProvider><PricingPage /></LearnerThemeProvider>} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
       {/* Learner routes wrapped with LearnerThemeProvider and LearnerLayout */}
       <Route element={<LearnerThemeProvider><LearnerLayout /></LearnerThemeProvider>}>
+        <Route path="/decks" element={<ExploreDecksPage />} />
+        <Route path="/decks/:deckId" element={<DeckDetailPage />} />
         <Route element={<ProtectedRoute allowedRoles={['LEARNER']} />}>
           <Route path="/dashboard" element={<LearnerDashboardPage />} />
           <Route path="/my-decks" element={<MyDecksPage />} />
-          <Route path="/decks" element={<ExploreDecksPage />} />
-          <Route path="/decks/:deckId" element={<DeckDetailPage />} />
           <Route path="/study/:deckId" element={<StudyPage />} />
           <Route path="/quiz/:quizId/start" element={<QuizAttemptPage />} />
           <Route path="/quiz-attempts/:publicId/result" element={<QuizAttemptResultPage />} />

@@ -17,5 +17,13 @@ export const authApi = {
   getProfile: async (): Promise<ApiResponse<UserInfo>> => {
     const res = await apiClient.get<ApiResponse<UserInfo>>('/auth/profile');
     return res.data;
+  },
+  checkUsername: async (username: string): Promise<boolean> => {
+    const res = await apiClient.get<ApiResponse<boolean>>(`/auth/check-username?username=${encodeURIComponent(username)}`);
+    return res.data.data;
+  },
+  checkEmail: async (email: string): Promise<boolean> => {
+    const res = await apiClient.get<ApiResponse<boolean>>(`/auth/check-email?email=${encodeURIComponent(email)}`);
+    return res.data.data;
   }
 };
