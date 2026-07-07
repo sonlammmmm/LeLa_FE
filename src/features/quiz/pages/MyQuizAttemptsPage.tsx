@@ -8,21 +8,20 @@ export function MyQuizAttemptsPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['my-quiz-attempts'],
-    queryFn: () => quizAttemptsApi.getAll({ size: 50 }),
+    queryFn: () => quizAttemptsApi.getMyAttempts({ size: 50 }),
   });
 
   const columns = [
     { title: 'Tên bài kiểm tra', dataIndex: 'quizTitle', render: (_: any, record: any) => <span className="font-bold">{record.quizTitle || `Quiz #${record.quizId}`}</span> },
     { title: 'Ngày làm', dataIndex: 'startedAt', render: (val: string) => val ? new Date(val).toLocaleDateString('vi-VN') : '-' },
-    { title: 'Điểm số', dataIndex: 'score', render: (val: number) => <strong className="text-lg">{val || 0} / 100</strong> },
+    { title: 'Điểm số', dataIndex: 'scorePercent', render: (val: number) => <strong className="text-lg">{val != null ? Number(val).toFixed(0) : 0} / 100</strong> },
     { 
       title: 'Kết quả', 
-      dataIndex: 'status', 
-      render: (val: string) => {
-        const isPassed = val === 'PASSED' || (val !== 'FAILED' && true); // Adjust based on real API
+      render: (_: any, record: any) => {
+        const isPassed = record.passed === true;
         return (
           <Tag color={isPassed ? '#2A8B9D' : '#F05A4A'} className="brutal-border font-bold px-3 py-1 text-sm">
-            {val || 'COMPLETED'}
+            {isPassed ? 'ĐẠT' : 'CHƯA ĐẠT'}
           </Tag>
         );
       }
@@ -32,9 +31,9 @@ export function MyQuizAttemptsPage() {
       render: (_: any, record: any) => (
         <Button 
           className="brutal-border font-bold hover:!bg-[#1D2A3A] hover:!text-white transition-colors"
-          onClick={() => navigate(`/quiz/${record.quizId}/start`)}
+          onClick={() => navigate(`/quiz-attempts/${record.publicId}/result`)}
         >
-          Làm lại
+          Xem kết quả
         </Button>
       )
     }
@@ -59,7 +58,7 @@ export function MyQuizAttemptsPage() {
           <Table 
             dataSource={data?.data?.content || []} 
             columns={columns} 
-            rowKey="id" 
+            rowKey="publicId"
             pagination={false} 
             className="brutal-table"
             locale={{ emptyText: <div className="py-10 font-bold text-lg text-gray-500">Chưa có bài kiểm tra nào.</div> }}

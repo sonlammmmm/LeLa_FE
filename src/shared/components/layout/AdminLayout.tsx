@@ -37,8 +37,8 @@ export function AdminLayout() {
         {/* Top Section: Logo + Nav */}
         <div className="flex flex-col">
           <div className="h-16 flex items-center px-6 border-b border-geist-gray-300">
-            <Link to="/admin/dashboard" className="text-xl font-bold tracking-tight">
-              LeLa<span className="text-geist-gray-600">Admin</span>
+            <Link to="/admin/dashboard" className="text-xl font-bold tracking-tight !text-geist-gray-1000">
+              LeLa<span className="!text-geist-gray-600">Admin</span>
             </Link>
           </div>
           
@@ -57,8 +57,8 @@ export function AdminLayout() {
                   to={item.path}
                   className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-geist-gray-200 text-geist-gray-1000'
-                      : 'text-geist-gray-700 hover:bg-geist-gray-100 hover:text-geist-gray-1000'
+                      ? 'bg-geist-gray-200 !text-geist-gray-1000'
+                      : '!text-geist-gray-700 hover:bg-geist-gray-100 hover:!text-geist-gray-1000'
                   }`}
                 >
                   <Icon className="h-4 w-4" />

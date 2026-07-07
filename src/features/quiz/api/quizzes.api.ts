@@ -21,5 +21,9 @@ export const quizzesApi = {
   delete: async (id: number): Promise<ApiResponse<void>> => {
     const res = await apiClient.delete<ApiResponse<void>>(`/quizzes/${id}`);
     return res.data;
+  },
+  getByDeckId: async (deckId: number): Promise<ApiResponse<QuizResponse[]>> => {
+    const res = await apiClient.get<ApiResponse<QuizResponse[]>>(`/quizzes/deck/${deckId}`);
+    return res.data;
   }
 };

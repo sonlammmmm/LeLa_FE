@@ -89,22 +89,22 @@ export function LearnerLayout() {
   );
 
   const learnerMenu = [
-    { key: 'dashboard', label: <Link to="/dashboard" className="font-bold text-lg">Tổng Quan</Link> },
-    { key: 'my-decks', label: <Link to="/my-decks" className="font-bold text-lg">Bộ Thẻ Của Tôi</Link> },
-    { key: 'explore', label: <Link to="/decks" className="font-bold text-lg">Khám Phá</Link> },
-    { key: 'leaderboard', label: <Link to="/leaderboard" className="font-bold text-lg">Xếp Hạng</Link> },
+    { key: 'dashboard', label: <Link to="/dashboard" className="font-bold text-lg !text-brand-navy hover:!text-brand-coral transition-colors">Tổng Quan</Link> },
+    { key: 'my-decks', label: <Link to="/my-decks" className="font-bold text-lg !text-brand-navy hover:!text-brand-coral transition-colors">Bộ Thẻ Của Tôi</Link> },
+    { key: 'explore', label: <Link to="/decks" className="font-bold text-lg !text-brand-navy hover:!text-brand-coral transition-colors">Khám Phá</Link> },
+    { key: 'leaderboard', label: <Link to="/leaderboard" className="font-bold text-lg !text-brand-navy hover:!text-brand-coral transition-colors">Xếp Hạng</Link> },
   ];
 
   const adminMenu = [
-    { key: 'dashboard', label: <Link to="/admin/dashboard" className="font-bold text-lg">Dashboard</Link> },
-    { key: 'decks', label: <Link to="/admin/decks" className="font-bold text-lg">QL Thẻ</Link> },
-    { key: 'quizzes', label: <Link to="/admin/quizzes" className="font-bold text-lg">QL Quiz</Link> },
-    { key: 'tags', label: <Link to="/admin/tags" className="font-bold text-lg">Tags</Link> },
-    { key: 'languages', label: <Link to="/admin/languages" className="font-bold text-lg">Ngôn Ngữ</Link> },
+    { key: 'dashboard', label: <Link to="/admin/dashboard" className="font-bold text-lg !text-brand-navy hover:!text-brand-coral transition-colors">Dashboard</Link> },
+    { key: 'decks', label: <Link to="/admin/decks" className="font-bold text-lg !text-brand-navy hover:!text-brand-coral transition-colors">QL Thẻ</Link> },
+    { key: 'quizzes', label: <Link to="/admin/quizzes" className="font-bold text-lg !text-brand-navy hover:!text-brand-coral transition-colors">QL Quiz</Link> },
+    { key: 'tags', label: <Link to="/admin/tags" className="font-bold text-lg !text-brand-navy hover:!text-brand-coral transition-colors">Tags</Link> },
+    { key: 'languages', label: <Link to="/admin/languages" className="font-bold text-lg !text-brand-navy hover:!text-brand-coral transition-colors">Ngôn Ngữ</Link> },
   ];
 
   const userDropdownItems = [
-    { key: 'profile', label: <Link to="/profile" className="font-bold block w-full text-brand-navy">Hồ sơ cá nhân</Link> },
+    { key: 'profile', label: <Link to="/profile" className="font-bold block w-full !text-brand-navy">Hồ sơ cá nhân</Link> },
     { key: 'logout', label: <span className="font-bold text-red-600">Đăng xuất</span>, onClick: handleLogout },
   ];
 
@@ -132,21 +132,21 @@ export function LearnerLayout() {
             {user ? (
               <>
                 <Popover content={notifContent} title={<span className="font-black uppercase tracking-tight border-b-[3px] border-black pb-2 block w-full">Thông báo</span>} trigger="click" placement="bottomRight">
-                  <Badge count={unreadCount} color="#F05A4A">
-                    <Button className="h-10 w-10 p-0 font-bold brutal-border brutal-pill bg-white flex items-center justify-center">
-                      <Bell className="w-5 h-5 text-brand-navy" />
+                  <Badge count={unreadCount} color="#F05A4A" offset={[-2, 2]}>
+                    <Button className="h-12 w-12 p-0 font-bold brutal-pill bg-white flex items-center justify-center hover:bg-gray-50 group">
+                      <Bell className="w-6 h-6 text-brand-navy group-hover:scale-110 transition-transform" strokeWidth={2.5} />
                     </Button>
                   </Badge>
                 </Popover>
                 
                 <Dropdown menu={{ items: userDropdownItems }} placement="bottomRight">
-                  <Button className="h-10 px-4 font-bold brutal-border brutal-pill bg-white text-brand-navy flex items-center gap-2">
+                  <Button className="h-12 px-6 text-base font-bold brutal-pill bg-white text-brand-navy flex items-center gap-2 hover:bg-gray-50">
                     <span>Hi, {user.username}</span>
                   </Button>
                 </Dropdown>
               </>
             ) : (
-              <Button onClick={() => navigate('/login')} className="font-bold brutal-border brutal-pill bg-brand-coral text-white">
+              <Button onClick={() => navigate('/login')} className="h-12 px-6 text-base font-bold brutal-pill bg-brand-coral text-white hover:bg-[#d94a3a]">
                 Đăng nhập
               </Button>
             )}

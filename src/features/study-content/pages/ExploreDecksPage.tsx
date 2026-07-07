@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Card, Tag, Button, Input, Skeleton } from 'antd';
+import { Card, Tag, Button, Skeleton } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { SearchOutlined, UserOutlined, SignalFilled, InfoCircleOutlined } from '@ant-design/icons';
 import { useState } from 'react';

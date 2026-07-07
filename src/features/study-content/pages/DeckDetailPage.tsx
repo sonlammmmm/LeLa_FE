@@ -1,10 +1,12 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Skeleton, Tag } from 'antd';
-import { ArrowLeftOutlined, SoundOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, SoundOutlined, CheckCircleOutlined, FieldTimeOutlined } from '@ant-design/icons';
 import { decksApi } from '../api/decks.api';
 import { flashcardsApi } from '../api/flashcards.api';
 import { deckEnrollmentsApi } from '../api/deck-enrollments.api';
+import { quizzesApi } from '../../quiz/api/quizzes.api';
+import { quizAttemptsApi } from '../../quiz/api/quiz-attempts.api';
 
 export function DeckDetailPage() {
   const { deckId } = useParams<{ deckId: string }>();
@@ -39,7 +41,21 @@ export function DeckDetailPage() {
     enabled: !!deckId,
   });
 
+  const { data: quizzesResp } = useQuery({
+    queryKey: ['deck-quizzes', deckId],
+    queryFn: () => quizzesApi.getByDeckId(Number(deckId)),
+    enabled: !!deckId,
+  });
+
+  const { data: attemptsResp } = useQuery({
+    queryKey: ['my-quiz-attempts', deckId],
+    queryFn: () => quizAttemptsApi.getMyAttempts({ size: 100 }),
+    enabled: !!deckId,
+  });
+
   const enrollment = enrollmentsPage?.data?.content?.find(e => e.deckId === Number(deckId));
+  const quizzes = quizzesResp?.data || [];
+  const myAttempts = attemptsResp?.data?.content || [];
 
   const cards = cardsPage?.content || [];
 
@@ -123,6 +139,45 @@ export function DeckDetailPage() {
           </div>
         </div>
       </div>
+
+      {quizzes.length > 0 && (
+        <div className="mb-12">
+          <div className="mb-8 border-b-[3px] border-black pb-4 flex justify-between items-end">
+            <h2 className="text-3xl font-black uppercase text-[#1D2A3A]">Bài kiểm tra</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {quizzes.map(quiz => {
+              const attemptsForQuiz = myAttempts.filter((a: any) => a.quizId === quiz.id && a.status === 'COMPLETED');
+              let highestScore = null;
+              if (attemptsForQuiz.length > 0) {
+                highestScore = Math.max(...attemptsForQuiz.map((a: any) => a.scorePercent || 0));
+              }
+
+              return (
+                <div key={quiz.id} className="brutal-card bg-[#F4F3EE] p-6 md:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-[3px] border-black shadow-[4px_4px_0px_0px_#000]">
+                  <div>
+                    <h3 className="text-2xl font-black text-[#1D2A3A] mb-2">{quiz.title}</h3>
+                    <div className="flex items-center gap-4 text-gray-700 font-bold flex-wrap">
+                      <span className="flex items-center gap-1 bg-white px-2 py-1 brutal-border border-[2px]"><FieldTimeOutlined /> {quiz.timeLimitSeconds ? `${Math.floor(quiz.timeLimitSeconds/60)} phút` : 'Không giới hạn'}</span>
+                      <span className="flex items-center gap-1 bg-white px-2 py-1 brutal-border border-[2px]">
+                        <CheckCircleOutlined /> 
+                        {highestScore !== null ? `Đạt: ${highestScore}%` : 'Chưa làm'}
+                      </span>
+                    </div>
+                  </div>
+                  <Button 
+                    className="brutal-pill font-black h-12 px-8 uppercase !bg-[#1D2A3A] !text-white hover:!bg-[#2A8B9D] transition-colors w-full sm:w-auto"
+                    onClick={() => navigate(`/quiz/${quiz.id}/start`)}
+                  >
+                    Làm bài
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="mb-8 border-b-[3px] border-black pb-4">
         <h2 className="text-3xl font-black uppercase text-[#1D2A3A]">Danh sách từ vựng</h2>

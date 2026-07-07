@@ -1,15 +1,14 @@
 import { useQuery, useQueries } from '@tanstack/react-query';
-import { Card, Button, Skeleton, message } from 'antd';
-import { DownloadOutlined, CheckCircleOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { Card, Button, Skeleton } from 'antd';
+import { InfoCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { deckEnrollmentsApi } from '../api/deck-enrollments.api';
 import { decksApi } from '../api/decks.api';
-import { flashcardsApi } from '../api/flashcards.api';
 import type { DeckResponse } from '../../../shared/types/lela';
 
 // Mapped Component to display the Deck details for each enrollment
-function EnrolledDeckCard({ deck, status, masteredCards }: { deck: DeckResponse, status: string, masteredCards: number }) {
+function EnrolledDeckCard({ deck, masteredCards }: { deck: DeckResponse, masteredCards: number }) {
   const navigate = useNavigate();
 
   const progressPercent = deck.totalCards > 0 ? Math.round((masteredCards / deck.totalCards) * 100) : 0;
@@ -155,7 +154,6 @@ export function MyDecksPage() {
                       <EnrolledDeckCard
                         key={enrollment.id}
                         deck={deck}
-                        status={enrollment.status}
                         masteredCards={enrollment.masteredCards || 0}
                       />
                     ))}

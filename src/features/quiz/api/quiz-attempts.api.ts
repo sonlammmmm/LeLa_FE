@@ -6,9 +6,24 @@ export const quizAttemptsApi = {
     const res = await apiClient.get<ApiResponse<Page<any>>>('/quiz-attempts', { params });
     return res.data;
   },
+  getMyAttempts: async (params?: any): Promise<ApiResponse<Page<any>>> => {
+    const res = await apiClient.get<ApiResponse<Page<any>>>('/quiz-attempts/my', { params });
+    return res.data;
+  },
   create: async (data: any): Promise<ApiResponse<any>> => {
     const res = await apiClient.post<ApiResponse<any>>('/quiz-attempts', data);
     return res.data;
   },
-  // In a real flow, a Learner would submit answers via QuizAnswerController, but we use this skeleton for now.
+  startAttempt: async (quizId: number): Promise<ApiResponse<any>> => {
+    const res = await apiClient.post<ApiResponse<any>>(`/quiz-attempts/start/${quizId}`, {});
+    return res.data;
+  },
+  submitAttempt: async (attemptId: number, data: any): Promise<ApiResponse<any>> => {
+    const res = await apiClient.post<ApiResponse<any>>(`/quiz-attempts/${attemptId}/submit`, data);
+    return res.data;
+  },
+  getAttemptDetail: async (publicId: string): Promise<ApiResponse<any>> => {
+    const res = await apiClient.get<ApiResponse<any>>(`/quiz-attempts/${publicId}/detail`);
+    return res.data;
+  }
 };
