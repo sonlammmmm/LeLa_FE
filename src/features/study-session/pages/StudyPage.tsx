@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button, Skeleton } from 'antd';
-import { CloudServerOutlined, SoundOutlined } from '@ant-design/icons';
+import { SoundOutlined } from '@ant-design/icons';
 import { useStudySession } from '../hooks/useStudySession';
 import { motion } from 'motion/react';
 
@@ -100,6 +100,7 @@ export function StudyPage() {
           <div className="flex flex-col gap-4">
             <Button onClick={() => {
               queryClient.invalidateQueries({ queryKey: ['deck-enrollments'] });
+              queryClient.invalidateQueries({ queryKey: ['study-progress', deckId] });
               navigate('/my-decks');
             }} className="brutal-pill font-black h-14 bg-white text-brand-navy brutal-border text-lg w-full transition-transform hover:-translate-y-1">
               Quay lại Bộ Thẻ
@@ -107,6 +108,7 @@ export function StudyPage() {
             <Button onClick={() => {
               queryClient.invalidateQueries({ queryKey: ['deck-enrollments'] });
               queryClient.invalidateQueries({ queryKey: ['daily-activity', 'today'] });
+              queryClient.invalidateQueries({ queryKey: ['study-progress', deckId] });
               navigate('/dashboard');
             }} className="brutal-pill font-black h-14 bg-brand-coral text-white brutal-border text-lg w-full transition-transform hover:-translate-y-1">
               Về Tổng Quan
@@ -127,6 +129,7 @@ export function StudyPage() {
             onClick={() => {
               queryClient.invalidateQueries({ queryKey: ['deck-enrollments'] });
               queryClient.invalidateQueries({ queryKey: ['daily-activity', 'today'] });
+              queryClient.invalidateQueries({ queryKey: ['study-progress', deckId] });
               navigate('/my-decks');
             }}
             className="brutal-pill bg-white hover:bg-gray-100 font-bold px-6 py-2 flex items-center gap-2 cursor-pointer transition-colors"
@@ -156,21 +159,26 @@ export function StudyPage() {
               className={`absolute inset-0 brutal-card bg-white flex flex-col items-center justify-center p-8 cursor-pointer border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-transform ${showBack ? 'pointer-events-none' : ''}`}
               style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
             >
+              <button
+                className="absolute top-4 right-4 w-12 h-12 flex items-center justify-center bg-[#2A8B9D] hover:bg-[#1D2A3A] active:translate-y-1 active:shadow-[2px_2px_0px_0px_#000] border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-white rounded-full transition-all cursor-pointer z-10"
+                onClick={(e) => handleSpeak(e, currentCard.frontText)}
+              >
+                <SoundOutlined className="text-xl" />
+              </button>
+
               <div className="text-3xl md:text-5xl font-black text-center mb-4 text-[#1D2A3A] break-words w-full px-4">{currentCard.frontText}</div>
 
-              <div className="flex items-center justify-center gap-4 mb-4 flex-wrap">
-                {currentCard.phonetic && (
-                  <div className="text-xl md:text-2xl font-medium text-gray-500">
-                    /{currentCard.phonetic}/
-                  </div>
-                )}
-                <button
-                  className="w-12 h-12 flex items-center justify-center bg-[#2A8B9D] hover:bg-[#1D2A3A] active:translate-y-1 active:shadow-[2px_2px_0px_0px_#000] border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-white rounded-full transition-all cursor-pointer"
-                  onClick={(e) => handleSpeak(e, currentCard.frontText)}
-                >
-                  <SoundOutlined className="text-xl" />
-                </button>
-              </div>
+              {currentCard.phonetic && (
+                <div className="text-xl md:text-2xl font-medium text-gray-500 mb-4">
+                  /{currentCard.phonetic}/
+                </div>
+              )}
+
+              {currentCard.frontImageUrl && (
+                <div className="w-full max-h-40 overflow-hidden rounded-xl border-[3px] border-black mt-2">
+                  <img src={currentCard.frontImageUrl} alt="Front Visual" className="w-full h-full object-cover" />
+                </div>
+              )}
 
               <div className="absolute bottom-6 bg-[#1D2A3A] text-white px-6 py-2 border-[3px] border-black font-black uppercase text-sm tracking-widest animate-pulse">
                 [ NHẤN ĐỂ LẬT THẺ ]
@@ -182,14 +190,20 @@ export function StudyPage() {
               className={`absolute inset-0 brutal-card bg-white flex flex-col items-center justify-center p-8 border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] ${!showBack ? 'pointer-events-none' : ''}`}
               style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
             >
-              <div className="text-2xl md:text-4xl font-black text-[#2A8B9D] mb-4 text-center break-words w-full px-4">{currentCard.backText}</div>
-
               <button
-                className="w-12 h-12 flex items-center justify-center bg-[#2A8B9D] hover:bg-[#1D2A3A] active:translate-y-1 active:shadow-[2px_2px_0px_0px_#000] border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-white rounded-full transition-all cursor-pointer mb-4"
+                className="absolute top-4 right-4 w-12 h-12 flex items-center justify-center bg-[#2A8B9D] hover:bg-[#1D2A3A] active:translate-y-1 active:shadow-[2px_2px_0px_0px_#000] border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-white rounded-full transition-all cursor-pointer z-10"
                 onClick={(e) => handleSpeak(e, currentCard.frontText)}
               >
                 <SoundOutlined className="text-xl" />
               </button>
+
+              {currentCard.backImageUrl && (
+                <div className="w-full max-w-[200px] max-h-32 mb-4 overflow-hidden rounded-xl border-[3px] border-black">
+                  <img src={currentCard.backImageUrl} alt="Back Visual" className="w-full h-full object-cover" />
+                </div>
+              )}
+
+              <div className="text-2xl md:text-4xl font-black text-[#2A8B9D] mb-4 text-center break-words w-full px-4">{currentCard.backText}</div>
 
               {currentCard.exampleText && (
                 <div className="text-xl italic font-medium text-gray-700 text-center bg-[#F4F3EE] p-4 border-[3px] border-black mt-2">

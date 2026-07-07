@@ -20,6 +20,7 @@ const DecksAdminPage = lazy(() => import('../../features/study-content/pages/Dec
 const FlashcardsAdminPage = lazy(() => import('../../features/study-content/pages/FlashcardsAdminPage').then(module => ({ default: module.FlashcardsAdminPage })));
 const ExploreDecksPage = lazy(() => import('../../features/study-content/pages/ExploreDecksPage').then(module => ({ default: module.ExploreDecksPage })));
 const MyDecksPage = lazy(() => import('../../features/study-content/pages/MyDecksPage').then(module => ({ default: module.MyDecksPage })));
+const DeckDetailPage = lazy(() => import('../../features/study-content/pages/DeckDetailPage').then(module => ({ default: module.DeckDetailPage })));
 const StudyPage = lazy(() => import('../../features/study-session/pages/StudyPage').then(module => ({ default: module.StudyPage })));
 const QuizzesAdminPage = lazy(() => import('../../features/quiz/pages/QuizzesAdminPage').then(module => ({ default: module.QuizzesAdminPage })));
 const QuizBuilderAdminPage = lazy(() => import('../../features/quiz/pages/QuizBuilderAdminPage').then(module => ({ default: module.QuizBuilderAdminPage })));
@@ -57,6 +58,7 @@ export function AppRoutes() {
           <Route path="/dashboard" element={<LearnerDashboardPage />} />
           <Route path="/my-decks" element={<MyDecksPage />} />
           <Route path="/decks" element={<ExploreDecksPage />} />
+          <Route path="/decks/:deckId" element={<DeckDetailPage />} />
           <Route path="/study/:deckId" element={<StudyPage />} />
           <Route path="/quiz/:quizId/start" element={<QuizAttemptPage />} />
           <Route path="/my-quiz-attempts" element={<MyQuizAttemptsPage />} />

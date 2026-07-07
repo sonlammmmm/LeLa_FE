@@ -501,56 +501,58 @@ export function FlashcardsAdminPage() {
 
       <div className="border border-geist-gray-400 rounded-lg bg-geist-bg-100 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-geist-gray-100 text-geist-gray-700 font-medium border-b border-geist-gray-300">
-              <tr>
-                <th className="px-4 py-3 w-10"></th>
-                <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">Thứ tự</th>
-                <th className="px-4 py-3">Mặt trước</th>
-                <th className="px-4 py-3">Mặt sau</th>
-                <th className="px-4 py-3">Phiên âm</th>
-                <th className="px-4 py-3 text-right">Hành động</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-geist-gray-300">
-              {isLoading ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-geist-gray-600">Đang tải...</td></tr>
-              ) : (
-                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={localCardsState.map((c: FlashcardResponse) => c.id)} strategy={verticalListSortingStrategy}>
-                    {localCardsState.map((card: FlashcardResponse) => (
-                      <SortableRow 
-                        key={card.id} 
-                        card={card} 
-                        openModal={openModal} 
-                        deleteMutation={deleteMutation} 
-                        onManualReorder={handleManualReorder} 
-                      />
-                    ))}
-                  </SortableContext>
-                </DndContext>
-              )}
-              {(!localCardsState || localCardsState.length === 0) && !isLoading && (
-                <tr>
-                  <td colSpan={7} className="px-4 py-16 text-center bg-geist-bg-100">
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-geist-gray-100 flex items-center justify-center">
-                        <ImageIcon className="w-6 h-6 text-geist-gray-400" />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-geist-gray-1000">Chưa có thẻ nào</p>
-                        <p className="text-sm text-geist-gray-600">Tạo thẻ mới hoặc import thẻ từ file để bắt đầu học.</p>
-                      </div>
-                      <Button onClick={() => openModal()} className="mt-2" variant="outline">
-                        <Plus className="w-4 h-4 mr-2" /> Thêm thẻ ngay
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={localCardsState.map((c: FlashcardResponse) => c.id)} strategy={verticalListSortingStrategy}>
+              <table className="w-full text-sm text-left">
+                <thead className="bg-geist-gray-100 text-geist-gray-700 font-medium border-b border-geist-gray-300">
+                  <tr>
+                    <th className="px-4 py-3 w-10"></th>
+                    <th className="px-4 py-3">ID</th>
+                    <th className="px-4 py-3">Thứ tự</th>
+                    <th className="px-4 py-3">Mặt trước</th>
+                    <th className="px-4 py-3">Mặt sau</th>
+                    <th className="px-4 py-3">Phiên âm</th>
+                    <th className="px-4 py-3 text-right">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-geist-gray-300">
+                  {isLoading ? (
+                    <tr><td colSpan={7} className="px-4 py-8 text-center text-geist-gray-600">Đang tải...</td></tr>
+                  ) : (
+                    <>
+                      {localCardsState.map((card: FlashcardResponse) => (
+                        <SortableRow 
+                          key={card.id} 
+                          card={card} 
+                          openModal={openModal} 
+                          deleteMutation={deleteMutation} 
+                          onManualReorder={handleManualReorder} 
+                        />
+                      ))}
+                    </>
+                  )}
+                  {(!localCardsState || localCardsState.length === 0) && !isLoading && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-16 text-center bg-geist-bg-100">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-geist-gray-100 flex items-center justify-center">
+                            <ImageIcon className="w-6 h-6 text-geist-gray-400" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium text-geist-gray-1000">Chưa có thẻ nào</p>
+                            <p className="text-sm text-geist-gray-600">Tạo thẻ mới hoặc import thẻ từ file để bắt đầu học.</p>
+                          </div>
+                          <Button onClick={() => openModal()} className="mt-2" variant="outline">
+                            <Plus className="w-4 h-4 mr-2" /> Thêm thẻ ngay
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </SortableContext>
+          </DndContext>
         </div>
       </div>
 

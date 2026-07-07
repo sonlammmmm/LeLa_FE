@@ -1,11 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { Button, Spin, Tooltip } from 'antd';
+import { Button, Spin, Modal } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { dailyActivitiesApi } from '../../gamification/api/daily-activities.api';
 import { srsReviewsApi } from '../../study-session/api/srs-reviews.api';
+import { profileApi } from '../../users/api/profile.api';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 
 export function LearnerDashboardPage() {
   const navigate = useNavigate();
+  const [isInfoModalVisible, setIsInfoModalVisible] = useState(false);
 
   const { data: activityData } = useQuery({
     queryKey: ['daily-activity', 'today'],
@@ -16,6 +20,7 @@ export function LearnerDashboardPage() {
   const startDateObj = new Date();
   startDateObj.setDate(startDateObj.getDate() - 364);
   const startDate = startDateObj.toISOString().split('T')[0];
+  const emptyDays = startDateObj.getDay();
 
   const { data: historyData, isLoading: isLoadingHistory } = useQuery({
     queryKey: ['daily-activity', 'history', startDate, endDate],
@@ -27,10 +32,16 @@ export function LearnerDashboardPage() {
     queryFn: () => srsReviewsApi.getStatistics(),
   });
 
+  const { data: profileResponse } = useQuery({
+    queryKey: ['profile'],
+    queryFn: profileApi.getMe,
+  });
+
   const xp = activityData?.data?.xpEarned || 0;
-  const cardsReviewed = activityData?.data?.cardsReviewed || 0;
+  const totalXp = profileResponse?.data?.xpTotal || 0;
   
-  // Tạm tính tỷ lệ Mastered (Giả lập nếu BE chưa trả về Mastered %)
+  // Tổng thẻ đã học và % thuần thục từ srsStats
+  const totalCardsLearned = srsStats?.data?.totalCardsLearned || 0;
   const masteredPercent = srsStats?.data?.masteryPercentage || 0;
 
   // Compute Streak & Heatmap Map
@@ -79,16 +90,28 @@ export function LearnerDashboardPage() {
   return (
     <div className="min-h-screen bg-[#F4F3EE] p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-black uppercase tracking-tighter text-[#1D2A3A] mb-8">Tổng quan học tập</h1>
+        <div className="flex items-center mb-8 gap-4">
+          <h1 className="text-4xl font-black uppercase tracking-tighter text-[#1D2A3A] m-0">Tổng quan học tập</h1>
+          <button 
+            onClick={() => setIsInfoModalVisible(true)} 
+            className="w-10 h-10 rounded-full bg-[#FFD700] border-[3px] border-black brutal-shadow flex items-center justify-center font-black text-xl hover:-translate-y-1 hover:scale-105 transition-all"
+            title="Giải thích các chỉ số"
+          >
+            !
+          </button>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="brutal-card bg-white p-6 flex flex-col items-center justify-center text-center">
+          <div className="brutal-card bg-white p-6 flex flex-col items-center justify-center text-center relative overflow-hidden">
             <span className="text-gray-500 font-bold uppercase mb-2">XP Hôm Nay</span>
-            <span className="text-5xl font-black text-[#F05A4A]">{xp}</span>
+            <span className="text-5xl font-black text-[#F05A4A] mb-3">{xp}</span>
+            <div className="brutal-pill bg-[#FFD700] px-4 py-1.5 border-[2px] border-black text-sm font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-1">
+              ⭐ Tổng: {totalXp} XP
+            </div>
           </div>
           <div className="brutal-card bg-white p-6 flex flex-col items-center justify-center text-center">
-            <span className="text-gray-500 font-bold uppercase mb-2">Thẻ đã ôn</span>
-            <span className="text-5xl font-black text-[#2A8B9D]">{cardsReviewed}</span>
+            <span className="text-gray-500 font-bold uppercase mb-2">Tổng thẻ đã học</span>
+            <span className="text-5xl font-black text-[#2A8B9D]">{totalCardsLearned}</span>
           </div>
           <div className="brutal-card bg-white p-6 flex flex-col items-center justify-center text-center">
             <span className="text-gray-500 font-bold uppercase mb-2">Độ thuần thục</span>
@@ -106,20 +129,30 @@ export function LearnerDashboardPage() {
           {isLoadingHistory ? (
             <div className="flex justify-center py-10"><Spin size="large" /></div>
           ) : (
-            <div>
-              <div className="flex flex-wrap gap-1" style={{ maxWidth: '100%' }}>
+            <div className="overflow-hidden">
+              <div 
+                className="grid gap-1 pb-2 overflow-x-auto" 
+                style={{ gridTemplateRows: 'repeat(7, 1fr)', gridAutoFlow: 'column' }}
+              >
+                {/* Empty cells to align the first day correctly */}
+                {Array.from({ length: emptyDays }).map((_, i) => (
+                  <div key={`empty-${i}`} className="w-4 h-4 pointer-events-none opacity-0"></div>
+                ))}
+                
+                {/* Heatmap cells */}
                 {heatmapDays.map((dateStr) => {
                   const dayXp = historyMap.get(dateStr) || 0;
                   return (
-                    <Tooltip key={dateStr} title={`${dateStr}: ${dayXp} XP`}>
-                      <div 
-                        className="w-4 h-4 border-[2px] border-black" 
-                        style={{ backgroundColor: getHeatmapColor(dayXp) }}
-                      />
-                    </Tooltip>
+                    <div 
+                      key={dateStr}
+                      title={`${dateStr}: ${dayXp} XP`}
+                      className="w-4 h-4 border-[2px] border-black transition-transform hover:scale-125 cursor-pointer" 
+                      style={{ backgroundColor: getHeatmapColor(dayXp) }}
+                    />
                   );
                 })}
               </div>
+              
               <div className="mt-4 flex items-center gap-2 justify-end text-sm font-bold uppercase">
                 <span>Ít</span>
                 <div className="w-4 h-4 border-[2px] border-black bg-[#F4F3EE]"></div>
@@ -164,6 +197,50 @@ export function LearnerDashboardPage() {
           </div>
         </div>
       </div>
+      
+      {/* Information Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-3 border-b-[3px] border-black pb-3 mb-2">
+            <div className="w-8 h-8 rounded-full bg-[#2A8B9D] flex items-center justify-center text-white border-[2px] border-black">
+              <QuestionCircleOutlined />
+            </div>
+            <span className="text-2xl font-bold uppercase text-[#1D2A3A]">Ý nghĩa các chỉ số</span>
+          </div>
+        }
+        open={isInfoModalVisible}
+        onCancel={() => setIsInfoModalVisible(false)}
+        footer={
+          <Button 
+            onClick={() => setIsInfoModalVisible(false)}
+            className="brutal-pill bg-[#F05A4A] text-white font-bold h-12 px-8 border-[2px] border-black hover:-translate-y-1 transition-transform"
+          >
+            ĐÃ HIỂU
+          </Button>
+        }
+        wrapClassName="brutal-modal-wrap"
+        closeIcon={null}
+        width={500}
+      >
+        <div className="flex flex-col gap-4 py-4">
+          <div className="brutal-card p-4 bg-[#F4F3EE]">
+            <h3 className="font-bold text-lg text-[#1D2A3A] mb-1">XP Hôm Nay</h3>
+            <p className="text-gray-700 m-0 font-medium">Là tổng điểm kinh nghiệm bạn đã tích lũy được trong ngày hôm nay bằng cách học thẻ mới hoặc ôn tập lại thẻ cũ.</p>
+          </div>
+          <div className="brutal-card p-4 bg-[#F4F3EE]">
+            <h3 className="font-bold text-lg text-[#2A8B9D] mb-1">Tổng thẻ đã học</h3>
+            <p className="text-gray-700 m-0 font-medium">Tổng số thẻ ghi nhớ mà bạn đã từng tương tác và bắt đầu học trên hệ thống, không tính các thẻ mới tinh chưa bao giờ mở.</p>
+          </div>
+          <div className="brutal-card p-4 bg-[#F4F3EE]">
+            <h3 className="font-bold text-lg text-[#2A8B9D] mb-1">Độ thuần thục</h3>
+            <p className="text-gray-700 m-0 font-medium">Tỷ lệ phần trăm các thẻ bạn đã chuyển sang trạng thái "Thuần thục" (Mastered) trên tổng số thẻ đã học. Chăm chỉ ôn tập khi đến hạn sẽ giúp tăng tỷ lệ này!</p>
+          </div>
+          <div className="brutal-card p-4 bg-[#FFD700]">
+            <h3 className="font-bold text-lg text-[#1D2A3A] mb-1">Chuỗi ngày (Streak)</h3>
+            <p className="text-gray-800 m-0 font-medium">Số ngày liên tiếp bạn có hoạt động học tập (kiếm được ít nhất 1 XP). Chuỗi sẽ về 0 nếu bạn bỏ lỡ một ngày.</p>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
