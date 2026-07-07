@@ -14,6 +14,7 @@ function EnrolledDeckCard({ deckId, status, masteredCards }: { deckId: number, s
   const [isOfflineReady, setIsOfflineReady] = useState(() => {
     return !!localStorage.getItem(`lela_offline_deck_${deckId}`);
   });
+  const [messageApi, contextHolder] = message.useMessage();
 
   const { data, isLoading } = useQuery({
     queryKey: ['deck', deckId],
@@ -38,10 +39,10 @@ function EnrolledDeckCard({ deckId, status, masteredCards }: { deckId: number, s
       if (cards) {
         localStorage.setItem(`lela_offline_deck_${deckId}`, JSON.stringify(cards));
         setIsOfflineReady(true);
-        message.success('Đã tải bộ thẻ để học offline!');
+        messageApi.success('Đã tải bộ thẻ để học offline!');
       }
     } catch (error) {
-      message.error('Tải offline thất bại!');
+      messageApi.error('Tải offline thất bại!');
     } finally {
       setIsDownloading(false);
     }
@@ -50,10 +51,11 @@ function EnrolledDeckCard({ deckId, status, masteredCards }: { deckId: number, s
   const progressPercent = deck.totalCards > 0 ? Math.round((masteredCards / deck.totalCards) * 100) : 0;
 
   return (
-    <div className="brutal-card bg-white flex flex-col h-full overflow-hidden">
+    <div className="brutal-card brutal-shadow bg-white flex flex-col h-full overflow-hidden">
+      {contextHolder}
       <div 
-        className="h-32 bg-gray-200 border-b-4 border-black bg-cover bg-center relative"
-        style={{ backgroundImage: `url(${deck.coverImageUrl || 'https://via.placeholder.com/400x200?text=No+Image'})` }}
+        className="h-32 bg-gray-200 border-b-[3px] border-black bg-cover bg-center relative"
+        style={{ backgroundImage: `url(${deck.coverImageUrl || 'https://placehold.co/400x200/F4F3EE/1D2A3A?text=No+Image'})` }}
       >
         <div className="absolute top-2 right-2 bg-[#F4F3EE] px-2 py-1 brutal-border text-xs font-bold uppercase">
           {status}
@@ -77,13 +79,13 @@ function EnrolledDeckCard({ deckId, status, masteredCards }: { deckId: number, s
 
         <div className="mt-auto flex gap-2">
           <Button 
-            className="flex-1 brutal-border brutal-shadow-sm font-black uppercase h-10 !bg-[#1D2A3A] !text-white hover:!translate-y-[-2px]"
+            className="flex-1 brutal-pill font-black uppercase h-10 !bg-[#1D2A3A] !text-white hover:!translate-y-[-2px]"
             onClick={() => navigate(`/study/${deck.id}`)}
           >
             HỌC TIẾP
           </Button>
           <Button 
-            className="brutal-border font-bold h-10 px-3 flex items-center justify-center bg-white"
+            className="brutal-pill font-bold h-10 px-3 flex items-center justify-center bg-white hover:!translate-y-[-2px]"
             icon={isOfflineReady ? <CheckCircleOutlined className="text-[#2A8B9D] text-lg" /> : <DownloadOutlined className="text-lg" />}
             loading={isDownloading}
             onClick={handleDownloadOffline}
@@ -113,7 +115,7 @@ export function MyDecksPage() {
         <Button 
           type="primary"
           onClick={() => navigate('/decks')}
-          className="brutal-border brutal-shadow brutal-pill !bg-[#F05A4A] !text-white h-12 px-6 font-bold uppercase"
+          className="brutal-pill !bg-[#F05A4A] !text-white h-12 px-6 font-bold uppercase hover:!translate-y-[-2px]"
         >
           TÌM BỘ THẺ MỚI
         </Button>

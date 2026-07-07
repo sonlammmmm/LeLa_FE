@@ -6,8 +6,10 @@ import { Bell } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notificationsApi } from '../../../features/notifications/api/notifications.api';
 import bubblePopSound from '../../../assets/sounds/bubble-pop.mp3';
+import { useRealtimeMetadata } from '../../hooks/useRealtimeMetadata';
 
 export function LearnerLayout() {
+  useRealtimeMetadata();
   const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
 
@@ -102,7 +104,7 @@ export function LearnerLayout() {
   ];
 
   const userDropdownItems = [
-    { key: 'profile', label: <span className="font-bold">Hồ sơ cá nhân</span> },
+    { key: 'profile', label: <Link to="/profile" className="font-bold block w-full text-brand-navy">Hồ sơ cá nhân</Link> },
     { key: 'logout', label: <span className="font-bold text-red-600">Đăng xuất</span>, onClick: handleLogout },
   ];
 

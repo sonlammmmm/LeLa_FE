@@ -1,135 +1,196 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button, Skeleton } from 'antd';
-import { CloudServerOutlined, DisconnectOutlined } from '@ant-design/icons';
-import { flashcardsApi } from '../../study-content/api/flashcards.api';
-import { srsReviewsApi } from '../api/srs-reviews.api';
+import { CloudServerOutlined, SoundOutlined } from '@ant-design/icons';
+import { useStudySession } from '../hooks/useStudySession';
 import { motion } from 'motion/react';
 
 export function StudyPage() {
   const { deckId } = useParams<{ deckId: string }>();
   const navigate = useNavigate();
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const {
+    currentCard,
+    isFinished,
+    isLoading,
+    sessionStats,
+    handleReview,
+    studyQueue
+  } = useStudySession(deckId);
+
+  const queryClient = useQueryClient();
+
   const [showBack, setShowBack] = useState(false);
 
-  // For demo, we just fetch all flashcards in the deck.
-  const { data: onlineData, isLoading, isError } = useQuery({
-    queryKey: ['study-cards', deckId],
-    queryFn: () => flashcardsApi.getByDeckId(Number(deckId), { size: 10000 }),
-    enabled: !!deckId,
-    retry: 1,
-  });
-
-  let cards = onlineData?.content || [];
-  let isOffline = false;
-
-  if (isError || (!isLoading && cards.length === 0)) {
-    const offlineDataStr = localStorage.getItem(`lela_offline_deck_${deckId}`);
-    if (offlineDataStr) {
-      try {
-        cards = JSON.parse(offlineDataStr);
-        isOffline = true;
-      } catch (e) {
-        console.error('Failed to parse offline cards', e);
-      }
-    }
-  }
-
-  const currentCard = cards[currentIndex];
-
   const handleNext = async (rating: number) => {
-    try {
-      if (!isOffline) {
-        await srsReviewsApi.reviewCard({
-          cardId: currentCard.id,
-          rating: rating
-        });
-      } else {
-        // Queue for sync later
-        const queueStr = localStorage.getItem('lela_offline_srs_queue') || '[]';
-        const queue = JSON.parse(queueStr);
-        queue.push({ cardId: currentCard.id, rating, date: new Date().toISOString() });
-        localStorage.setItem('lela_offline_srs_queue', JSON.stringify(queue));
-      }
-    } catch (e) {
-      console.error('Failed to save SRS review', e);
-    }
-    
-    if (currentIndex < cards.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-      setShowBack(false);
-    } else {
-      // Finished
-      navigate('/my-decks');
+    await handleReview(rating);
+    setShowBack(false);
+  };
+
+  const handleSpeak = (e: React.MouseEvent, text: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      window.speechSynthesis.speak(utterance);
     }
   };
 
-  if (isLoading) {
+  const getButtonLabels = () => {
+    // For ponytail simulation, we just return fixed labels
+    // since we offloaded progressData to the hook
+    return {
+      again: '< 1m',
+      hard: '5m',
+      good: '10m',
+      easy: '4d'
+    };
+  };
+
+  if (isLoading || !isFinished && !currentCard) {
     return <div className="p-8 max-w-2xl mx-auto"><Skeleton active /></div>;
   }
 
-  if (cards.length === 0) {
+  if (isFinished) {
     return (
-      <div className="p-8 max-w-2xl mx-auto text-center mt-20 brutal-card bg-white">
-        <h2 className="text-2xl font-bold mb-4">Không tải được thẻ!</h2>
-        <p className="mb-6 font-medium text-gray-600">Vui lòng kiểm tra kết nối mạng hoặc tải bộ thẻ về máy trước để học offline.</p>
-        <Button onClick={() => navigate('/my-decks')} className="brutal-border font-bold h-12 px-6">Quay lại</Button>
+      <div className="min-h-screen bg-[#F4F3EE] p-8 flex items-center justify-center relative overflow-hidden">
+        {/* Simple Confetti Effect via Framer Motion */}
+        {Array.from({ length: 30 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className={`absolute w-3 h-3 rounded-sm ${['bg-[#F05A4A]', 'bg-[#2A8B9D]', 'bg-[#FFD700]', 'bg-brand-navy'][i % 4]} brutal-border`}
+            initial={{
+              x: '50vw',
+              y: '100vh',
+              opacity: 1
+            }}
+            animate={{
+              x: `${Math.random() * 100}vw`,
+              y: `${Math.random() * -100}vh`,
+              rotate: Math.random() * 360,
+              opacity: 0
+            }}
+            transition={{ duration: 2.5 + Math.random() * 2, ease: "easeOut" }}
+          />
+        ))}
+
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', bounce: 0.5 }}
+          className="max-w-md w-full text-center brutal-card bg-white p-10 brutal-shadow relative z-10"
+        >
+          <div className="text-6xl mb-4">🎉</div>
+          <h2 className="text-4xl font-black mb-2 uppercase text-brand-navy">Hoàn thành!</h2>
+          <p className="mb-8 font-bold text-gray-600 text-lg">Bạn đã học xong tất cả thẻ đến hạn hôm nay.</p>
+
+          <div className="bg-[#F4F3EE] border-[3px] border-black p-4 mb-8 flex justify-around">
+            <div>
+              <div className="text-sm font-black uppercase text-gray-500">Lượt ôn tập</div>
+              <div className="text-3xl font-black text-brand-teal">{sessionStats.reviewed}</div>
+            </div>
+            <div>
+              <div className="text-sm font-black uppercase text-gray-500">XP Nhận được</div>
+              <div className="text-3xl font-black text-brand-coral">+{sessionStats.newGainedXp}</div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <Button onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['deck-enrollments'] });
+              navigate('/my-decks');
+            }} className="brutal-pill font-black h-14 bg-white text-brand-navy brutal-border text-lg w-full transition-transform hover:-translate-y-1">
+              Quay lại Bộ Thẻ
+            </Button>
+            <Button onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['deck-enrollments'] });
+              queryClient.invalidateQueries({ queryKey: ['daily-activity', 'today'] });
+              navigate('/dashboard');
+            }} className="brutal-pill font-black h-14 bg-brand-coral text-white brutal-border text-lg w-full transition-transform hover:-translate-y-1">
+              Về Tổng Quan
+            </Button>
+          </div>
+        </motion.div>
       </div>
     );
   }
 
+  const labels = getButtonLabels();
+
   return (
-    <div className="min-h-screen bg-[#F4F3EE] flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-[#F4F3EE] flex flex-col items-center pt-8 md:pt-16 p-4">
       <div className="w-full max-w-2xl">
         <div className="flex justify-between items-center mb-6">
-          <Button onClick={() => navigate('/my-decks')} className="brutal-border font-bold">&larr; THOÁT</Button>
-          
+          <button
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['deck-enrollments'] });
+              queryClient.invalidateQueries({ queryKey: ['daily-activity', 'today'] });
+              navigate('/my-decks');
+            }}
+            className="brutal-pill bg-white hover:bg-gray-100 font-bold px-6 py-2 flex items-center gap-2 cursor-pointer transition-colors"
+          >
+            &larr; THOÁT
+          </button>
+
           <div className="flex gap-4">
-            {isOffline ? (
-              <div className="font-bold text-sm brutal-card bg-[#FFD700] px-4 py-1 flex items-center gap-2 border-[2px] shadow-[2px_2px_0px_0px_#000]">
-                <DisconnectOutlined /> CHẾ ĐỘ OFFLINE
-              </div>
-            ) : (
-              <div className="font-bold text-sm brutal-card bg-[#ccffcc] text-[#009900] px-4 py-1 flex items-center gap-2 border-[2px] shadow-[2px_2px_0px_0px_#000]">
-                <CloudServerOutlined /> ONLINE
-              </div>
-            )}
             <div className="font-bold text-lg brutal-card bg-white px-4 py-1 border-[2px] shadow-[2px_2px_0px_0px_#000]">
-              Tiến độ: {currentIndex + 1} / {cards.length}
+              Còn lại: {studyQueue.length} thẻ
             </div>
           </div>
         </div>
 
-        <div className="relative min-h-[400px] mb-8" style={{ perspective: 1000 }}>
-          <motion.div 
+        <div className="relative h-[450px] w-full mb-8" style={{ perspective: 1000 }}>
+          <motion.div
+            key={currentCard.id}
             className="w-full h-full relative"
             style={{ transformStyle: 'preserve-3d' }}
-            initial={false}
-            animate={{ rotateX: showBack ? 180 : 0 }}
+            initial={{ rotateY: 0 }}
+            animate={{ rotateY: showBack ? 180 : 0 }}
             transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-            onClick={() => !showBack && setShowBack(true)}
+            onClick={() => setShowBack(!showBack)}
           >
             {/* FRONT */}
-            <div 
-              className="absolute inset-0 brutal-card bg-white flex flex-col items-center justify-center p-8 cursor-pointer border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-transform"
-              style={{ backfaceVisibility: 'hidden' }}
+            <div
+              className={`absolute inset-0 brutal-card bg-white flex flex-col items-center justify-center p-8 cursor-pointer border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-1 transition-transform ${showBack ? 'pointer-events-none' : ''}`}
+              style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
             >
-              <div className="text-5xl font-black text-center mb-4 text-[#1D2A3A]">{currentCard.frontText}</div>
-              {currentCard.phonetic && (
-                <div className="text-2xl font-bold text-gray-500 mb-4 bg-gray-100 px-4 py-1 border-[3px] border-black">/{currentCard.phonetic}/</div>
-              )}
+              <div className="text-3xl md:text-5xl font-black text-center mb-4 text-[#1D2A3A] break-words w-full px-4">{currentCard.frontText}</div>
+
+              <div className="flex items-center justify-center gap-4 mb-4 flex-wrap">
+                {currentCard.phonetic && (
+                  <div className="text-xl md:text-2xl font-medium text-gray-500">
+                    /{currentCard.phonetic}/
+                  </div>
+                )}
+                <button
+                  className="w-12 h-12 flex items-center justify-center bg-[#2A8B9D] hover:bg-[#1D2A3A] active:translate-y-1 active:shadow-[2px_2px_0px_0px_#000] border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-white rounded-full transition-all cursor-pointer"
+                  onClick={(e) => handleSpeak(e, currentCard.frontText)}
+                >
+                  <SoundOutlined className="text-xl" />
+                </button>
+              </div>
+
               <div className="absolute bottom-6 bg-[#1D2A3A] text-white px-6 py-2 border-[3px] border-black font-black uppercase text-sm tracking-widest animate-pulse">
                 [ NHẤN ĐỂ LẬT THẺ ]
               </div>
             </div>
 
             {/* BACK */}
-            <div 
-              className="absolute inset-0 brutal-card bg-white flex flex-col items-center justify-center p-8 border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
-              style={{ backfaceVisibility: 'hidden', transform: 'rotateX(180deg)' }}
+            <div
+              className={`absolute inset-0 brutal-card bg-white flex flex-col items-center justify-center p-8 border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] ${!showBack ? 'pointer-events-none' : ''}`}
+              style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
             >
-              <div className="text-4xl font-black text-[#2A8B9D] mb-4 text-center">{currentCard.backText}</div>
+              <div className="text-2xl md:text-4xl font-black text-[#2A8B9D] mb-4 text-center break-words w-full px-4">{currentCard.backText}</div>
+
+              <button
+                className="w-12 h-12 flex items-center justify-center bg-[#2A8B9D] hover:bg-[#1D2A3A] active:translate-y-1 active:shadow-[2px_2px_0px_0px_#000] border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-white rounded-full transition-all cursor-pointer mb-4"
+                onClick={(e) => handleSpeak(e, currentCard.frontText)}
+              >
+                <SoundOutlined className="text-xl" />
+              </button>
+
               {currentCard.exampleText && (
                 <div className="text-xl italic font-medium text-gray-700 text-center bg-[#F4F3EE] p-4 border-[3px] border-black mt-2">
                   "{currentCard.exampleText}"
@@ -139,14 +200,36 @@ export function StudyPage() {
           </motion.div>
         </div>
 
-        {showBack && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
-            <Button onClick={() => handleNext(1)} className="h-16 brutal-border border-[3px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black !bg-[#ffcccc] hover:!bg-[#ff9999] text-[#cc0000] text-xl hover:-translate-y-1 transition-transform">LẠI</Button>
-            <Button onClick={() => handleNext(2)} className="h-16 brutal-border border-[3px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black !bg-[#ffe6cc] hover:!bg-[#ffcc99] text-[#cc6600] text-xl hover:-translate-y-1 transition-transform">KHÓ</Button>
-            <Button onClick={() => handleNext(3)} className="h-16 brutal-border border-[3px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black !bg-[#ccffcc] hover:!bg-[#99ff99] text-[#009900] text-xl hover:-translate-y-1 transition-transform">TỐT</Button>
-            <Button onClick={() => handleNext(4)} className="h-16 brutal-border border-[3px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-black !bg-[#cce5ff] hover:!bg-[#99ccff] text-[#0066cc] text-xl hover:-translate-y-1 transition-transform">DỄ</Button>
-          </div>
-        )}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
+          <button
+            onClick={() => handleNext(1)}
+            className="h-[90px] brutal-border brutal-shadow rounded-2xl bg-[#ffcccc] hover:bg-[#ff9999] active:translate-y-1 active:shadow-[2px_2px_0px_0px_#000] text-[#cc0000] flex flex-col justify-center items-center transition-all cursor-pointer"
+          >
+            <div className="text-2xl font-black">LẠI</div>
+            <div className="text-sm font-bold opacity-80 mt-1">{labels.again}</div>
+          </button>
+          <button
+            onClick={() => handleNext(2)}
+            className="h-[90px] brutal-border brutal-shadow rounded-2xl bg-[#ffe6cc] hover:bg-[#ffcc99] active:translate-y-1 active:shadow-[2px_2px_0px_0px_#000] text-[#cc6600] flex flex-col justify-center items-center transition-all cursor-pointer"
+          >
+            <div className="text-2xl font-black">KHÓ</div>
+            <div className="text-sm font-bold opacity-80 mt-1">{labels.hard}</div>
+          </button>
+          <button
+            onClick={() => handleNext(3)}
+            className="h-[90px] brutal-border brutal-shadow rounded-2xl bg-[#ccffcc] hover:bg-[#99ff99] active:translate-y-1 active:shadow-[2px_2px_0px_0px_#000] text-[#009900] flex flex-col justify-center items-center transition-all cursor-pointer"
+          >
+            <div className="text-2xl font-black">TỐT</div>
+            <div className="text-sm font-bold opacity-80 mt-1">{labels.good}</div>
+          </button>
+          <button
+            onClick={() => handleNext(4)}
+            className="h-[90px] brutal-border brutal-shadow rounded-2xl bg-[#cce5ff] hover:bg-[#99ccff] active:translate-y-1 active:shadow-[2px_2px_0px_0px_#000] text-[#0066cc] flex flex-col justify-center items-center transition-all cursor-pointer"
+          >
+            <div className="text-2xl font-black">DỄ</div>
+            <div className="text-sm font-bold opacity-80 mt-1">{labels.easy}</div>
+          </button>
+        </div>
       </div>
     </div>
   );

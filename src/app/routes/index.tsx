@@ -14,6 +14,8 @@ const UsersAdminPage = lazy(() => import('../../features/user-management/pages/U
 const TransactionsAdminPage = lazy(() => import('../../features/subscription/pages/TransactionsAdminPage').then(module => ({ default: module.TransactionsAdminPage })));
 const SubscriptionPlansAdminPage = lazy(() => import('../../features/subscription/pages/SubscriptionPlansAdminPage').then(module => ({ default: module.SubscriptionPlansAdminPage })));
 const NotificationsAdminPage = lazy(() => import('../../features/notifications/pages/NotificationsAdminPage').then(module => ({ default: module.NotificationsAdminPage })));
+const TopicsAdminPage = lazy(() => import('../../features/master-data/pages/TopicsAdminPage').then(module => ({ default: module.TopicsAdminPage })));
+const AchievementsAdminPage = lazy(() => import('../../features/gamification/pages/AchievementsAdminPage').then(module => ({ default: module.AchievementsAdminPage })));
 const DecksAdminPage = lazy(() => import('../../features/study-content/pages/DecksAdminPage').then(module => ({ default: module.DecksAdminPage })));
 const FlashcardsAdminPage = lazy(() => import('../../features/study-content/pages/FlashcardsAdminPage').then(module => ({ default: module.FlashcardsAdminPage })));
 const ExploreDecksPage = lazy(() => import('../../features/study-content/pages/ExploreDecksPage').then(module => ({ default: module.ExploreDecksPage })));
@@ -24,6 +26,7 @@ const QuizBuilderAdminPage = lazy(() => import('../../features/quiz/pages/QuizBu
 const QuizAttemptPage = lazy(() => import('../../features/quiz/pages/QuizAttemptPage').then(module => ({ default: module.QuizAttemptPage })));
 const MyQuizAttemptsPage = lazy(() => import('../../features/quiz/pages/MyQuizAttemptsPage').then(module => ({ default: module.MyQuizAttemptsPage })));
 const LeaderboardPage = lazy(() => import('../../features/gamification/pages/LeaderboardPage').then(module => ({ default: module.LeaderboardPage })));
+const ProfilePage = lazy(() => import('../../features/users/pages/ProfilePage').then(module => ({ default: module.ProfilePage })));
 const LearnerDashboardPage = lazy(() => import('../../features/dashboard/pages/LearnerDashboardPage').then(module => ({ default: module.LearnerDashboardPage })));
 const PricingPage = lazy(() => import('../../features/subscription/pages/PricingPage').then(module => ({ default: module.PricingPage })));
 const AdminDashboardPage = lazy(() => import('../../features/dashboard/pages/AdminDashboardPage').then(module => ({ default: module.AdminDashboardPage })));
@@ -58,6 +61,7 @@ export function AppRoutes() {
           <Route path="/quiz/:quizId/start" element={<QuizAttemptPage />} />
           <Route path="/my-quiz-attempts" element={<MyQuizAttemptsPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
       </Route>
 
@@ -74,6 +78,8 @@ export function AppRoutes() {
             <Route path="/admin/subscription-plans" element={<SubscriptionPlansAdminPage />} />
             <Route path="/admin/tags" element={<TagsPage />} />
             <Route path="/admin/languages" element={<LanguagesPage />} />
+            <Route path="/admin/topics" element={<TopicsAdminPage />} />
+            <Route path="/admin/achievements" element={<AchievementsAdminPage />} />
           </Route>
           <Route path="/admin/decks" element={<DecksAdminPage />} />
           <Route path="/admin/decks/:deckId/flashcards" element={<FlashcardsAdminPage />} />

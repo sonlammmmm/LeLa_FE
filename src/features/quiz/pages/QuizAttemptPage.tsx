@@ -35,7 +35,7 @@ export function QuizAttemptPage() {
           </div>
         </div>
 
-        <div className="brutal-card bg-white p-8 mb-8 border-[4px] border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <div className="brutal-card brutal-shadow bg-white p-8 mb-8">
           <h2 className="text-2xl font-black mb-8 leading-relaxed">
             Đây là nội dung câu hỏi số {currentQuestion + 1} cho Quiz #{quizId}?
           </h2>
@@ -47,7 +47,7 @@ export function QuizAttemptPage() {
                 className={`
                   flex items-center gap-4 p-4 border-[3px] border-black cursor-pointer transition-all duration-200
                   ${selectedOption === val 
-                    ? 'bg-[#2A8B9D] text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] translate-y-[-2px]' 
+                    ? 'bg-[#2A8B9D] text-white brutal-shadow translate-y-[-2px]' 
                     : 'bg-[#F4F3EE] hover:bg-gray-200 shadow-none'
                   }
                 `}
@@ -69,7 +69,7 @@ export function QuizAttemptPage() {
 
         <div className="flex justify-between gap-4 mt-8">
           <Button 
-            className="brutal-border h-14 px-8 font-black text-lg border-[3px] shadow-sm"
+            className="brutal-card h-14 px-8 font-black text-lg bg-white hover:-translate-y-1 transition-transform"
             disabled={currentQuestion === 0}
             onClick={() => {
               setCurrentQuestion(prev => prev - 1);
@@ -81,14 +81,14 @@ export function QuizAttemptPage() {
 
           {currentQuestion === totalQuestions - 1 ? (
             <Button 
-              className="brutal-border brutal-shadow h-14 px-10 font-black text-lg uppercase !bg-[#F05A4A] !text-white border-[3px] hover:!translate-y-[-2px] hover:!bg-[#d94a39] transition-transform"
+              className="brutal-pill h-14 px-10 font-black text-lg uppercase !bg-[#F05A4A] !text-white hover:!translate-y-[-2px] transition-transform"
               onClick={handleSubmit}
             >
               NỘP BÀI
             </Button>
           ) : (
             <Button 
-              className="brutal-border brutal-shadow h-14 px-10 font-black text-lg uppercase !bg-[#1D2A3A] !text-white border-[3px] hover:!translate-y-[-2px] hover:!bg-black transition-transform"
+              className="brutal-pill h-14 px-10 font-black text-lg uppercase !bg-[#1D2A3A] !text-white hover:!translate-y-[-2px] transition-transform"
               onClick={() => {
                 setCurrentQuestion(prev => prev + 1);
                 setSelectedOption(null);

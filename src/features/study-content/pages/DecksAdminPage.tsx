@@ -16,7 +16,7 @@ type FormValues = {
   title: string;
   description: string;
   languageId: number;
-  category: string;
+  topicId: number;
   difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
   visibility: 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
   coverImageUrl: string;
@@ -68,6 +68,15 @@ export function DecksAdminPage() {
   const { data: languagesData } = useQuery({
     queryKey: ['languages'],
     queryFn: () => languagesApi.getAll(),
+  });
+
+  const { data: topicsData } = useQuery({
+    queryKey: ['admin-topics'],
+    queryFn: async () => {
+      const { apiClient } = await import('../../../shared/lib/api');
+      const res = await apiClient.get('/topics');
+      return res.data;
+    },
   });
 
   const saveMutation = useMutation({
@@ -149,7 +158,7 @@ export function DecksAdminPage() {
         title: deck.title,
         description: deck.description || '',
         languageId: deck.languageId,
-        category: deck.category || '',
+        topicId: deck.topic?.id || undefined,
         difficulty: deck.difficulty as any,
         visibility: deck.visibility as any,
         coverImageUrl: deck.coverImageUrl || '',
@@ -167,8 +176,9 @@ export function DecksAdminPage() {
   };
 
   const onSubmit = (values: FormValues) => {
-    // ensure languageId is number
+    // ensure languageId and topicId are numbers
     values.languageId = Number(values.languageId);
+    values.topicId = Number(values.topicId);
     saveMutation.mutate(values);
   };
 
@@ -192,7 +202,7 @@ export function DecksAdminPage() {
               <tr>
                 <th className="px-4 py-3">ID</th>
                 <th className="px-4 py-3">Tiêu đề</th>
-                <th className="px-4 py-3">Danh mục</th>
+                <th className="px-4 py-3">Chủ đề</th>
                 <th className="px-4 py-3">Độ khó</th>
                 <th className="px-4 py-3">Trạng thái</th>
                 <th className="px-4 py-3 text-center">Số thẻ</th>
@@ -212,7 +222,7 @@ export function DecksAdminPage() {
                   <tr key={deck.id} className="hover:bg-geist-gray-100/50 transition-colors">
                     <td className="px-4 py-3 font-mono text-geist-gray-900">{deck.id}</td>
                     <td className="px-4 py-3 text-geist-gray-1000 font-medium">{deck.title}</td>
-                    <td className="px-4 py-3 text-geist-gray-1000">{deck.category}</td>
+                    <td className="px-4 py-3 text-geist-gray-1000">{deck.topic?.name}</td>
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-geist-gray-200 text-geist-gray-800">
                         {DIFFICULTY_MAP[deck.difficulty] || deck.difficulty}
@@ -339,9 +349,17 @@ export function DecksAdminPage() {
               {errors.languageId && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-geist-gray-1000">Danh mục</label>
-              <Input {...register('category', { required: true })} placeholder="VD: JLPT N5" />
-              {errors.category && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
+              <label className="text-sm font-medium text-geist-gray-1000">Chủ đề</label>
+              <select
+                {...register('topicId', { required: true })}
+                className="flex h-10 w-full rounded-md border border-geist-gray-400 bg-geist-bg-100 px-3 py-2 text-sm text-geist-gray-1000 focus:outline-none focus:ring-2 focus:ring-geist-blue-700 hover:border-geist-gray-600 transition-colors"
+              >
+                <option value="">Chọn chủ đề...</option>
+                {topicsData?.map((t: any) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+              {errors.topicId && <span className="text-xs text-geist-red-800">Bắt buộc</span>}
             </div>
           </div>
 

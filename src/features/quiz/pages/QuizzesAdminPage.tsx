@@ -91,7 +91,7 @@ export function QuizzesAdminPage() {
         </div>
       </div>
 
-      <div className="border border-geist-gray-400 rounded-lg bg-geist-bg-200 overflow-hidden shadow-sm">
+      <div className="border border-geist-gray-400 rounded-lg bg-geist-bg-100 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-geist-gray-100 text-geist-gray-700 font-medium border-b border-geist-gray-300">
@@ -108,7 +108,7 @@ export function QuizzesAdminPage() {
               {isLoading ? (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-geist-gray-600">Đang tải...</td></tr>
               ) : data?.data?.content?.map((quiz) => (
-                <tr key={quiz.id} className="hover:bg-geist-gray-50 transition-colors">
+                <tr key={quiz.id} className="hover:bg-geist-gray-100/50 transition-colors">
                   <td className="px-4 py-3 font-mono text-geist-gray-900">{quiz.quizCode}</td>
                   <td className="px-4 py-3 text-geist-gray-1000 font-medium">{quiz.title}</td>
                   <td className="px-4 py-3 text-geist-gray-1000">{QUIZ_TYPE_MAP[quiz.quizType] || quiz.quizType}</td>

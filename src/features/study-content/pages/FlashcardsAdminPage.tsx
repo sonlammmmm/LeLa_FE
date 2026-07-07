@@ -176,11 +176,25 @@ export function FlashcardsAdminPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => flashcardsApi.delete(id),
+    onMutate: async (id: number) => {
+      await queryClient.cancelQueries({ queryKey: ['flashcards', deckId] });
+      const previousCards = queryClient.getQueryData(['flashcards', deckId, currentPage, pageSize]);
+      
+      // Optimistically update local state
+      setLocalCardsState(prev => prev.filter(c => c.id !== id));
+      
+      return { previousCards };
+    },
     onSuccess: () => {
       message.success('Xóa thẻ thành công');
       queryClient.invalidateQueries({ queryKey: ['flashcards', deckId] });
     },
-    onError: (err: any) => message.error(err.response?.data?.message || 'Có lỗi xảy ra'),
+    onError: (err: any, _, context: any) => {
+      message.error(err.response?.data?.message || 'Có lỗi xảy ra');
+      if (context?.previousCards) {
+         setLocalCardsState((context.previousCards as any).content || []);
+      }
+    },
   });
 
   const reorderMutation = useMutation({

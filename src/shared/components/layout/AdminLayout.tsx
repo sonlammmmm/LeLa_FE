@@ -1,7 +1,7 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../providers/AuthProvider';
 import { useTheme } from '../../providers/ThemeProvider';
-import { LogOut, LayoutDashboard, Tags, Languages, Book, HelpCircle, Moon, Sun, Monitor, Users, CreditCard, Bell, Crown } from 'lucide-react';
+import { LogOut, LayoutDashboard, Tags, Languages, Book, HelpCircle, Moon, Sun, Monitor, Users, CreditCard, Bell, Crown, FolderTree, Trophy } from 'lucide-react';
 import type { UserRole } from '../../types/lela';
 
 export function AdminLayout() {
@@ -24,6 +24,8 @@ export function AdminLayout() {
     { name: 'Gói đăng ký', path: '/admin/subscription-plans', icon: Crown, roles: ['ADMIN'] },
     { name: 'Thẻ (Tags)', path: '/admin/tags', icon: Tags, roles: ['ADMIN'] },
     { name: 'Ngôn ngữ', path: '/admin/languages', icon: Languages, roles: ['ADMIN'] },
+    { name: 'Chủ đề', path: '/admin/topics', icon: FolderTree, roles: ['ADMIN'] },
+    { name: 'Thành tựu', path: '/admin/achievements', icon: Trophy, roles: ['ADMIN'] },
     { name: 'Bộ thẻ (Decks)', path: '/admin/decks', icon: Book, roles: ['ADMIN', 'CONTENT_CREATOR', 'MODERATOR'] },
     { name: 'Bài kiểm tra', path: '/admin/quizzes', icon: HelpCircle, roles: ['ADMIN', 'CONTENT_CREATOR'] },
   ];

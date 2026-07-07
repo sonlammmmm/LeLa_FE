@@ -23,7 +23,7 @@ type OptionFormValues = {
 type QuestionFormValues = {
   id?: number;
   questionText: string;
-  questionType: 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'FILL_IN_THE_BLANK';
+  questionType: 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'FILL_BLANK';
   points: number;
   displayOrder: number;
   questionImageUrl: string;
@@ -161,7 +161,7 @@ function QuestionCard({
   isEditing
 }: any) {
   const localType = useWatch({ control, name: `questions.${qIndex}.questionType`, defaultValue: qField.questionType });
-  const qType = globalQuizType === 'MIXED' ? localType : (globalQuizType === 'FILL_BLANK' ? 'FILL_IN_THE_BLANK' : globalQuizType);
+  const qType = globalQuizType === 'MIXED' ? localType : (globalQuizType === 'FILL_BLANK' ? 'FILL_BLANK' : globalQuizType);
 
   // Sync forced type to form state on render if it's locked by global
   useEffect(() => {
@@ -241,7 +241,7 @@ function QuestionCard({
               >
                 <option value="MULTIPLE_CHOICE">Trắc nghiệm</option>
                 <option value="TRUE_FALSE">Đúng / Sai</option>
-                <option value="FILL_IN_THE_BLANK">Điền vào chỗ trống</option>
+                <option value="FILL_BLANK">Điền vào chỗ trống</option>
               </select>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -616,7 +616,7 @@ export function QuizBuilderAdminPage() {
               type="button"
               onClick={() => {
                 const defaultType = watchQuizType === 'MIXED' ? 'MULTIPLE_CHOICE' : 
-                                   (watchQuizType === 'FILL_BLANK' ? 'FILL_IN_THE_BLANK' : watchQuizType);
+                                   (watchQuizType === 'FILL_BLANK' ? 'FILL_BLANK' : watchQuizType);
                 appendQuestion({
                   questionText: '',
                   questionType: defaultType as any,
@@ -667,7 +667,7 @@ export function QuizBuilderAdminPage() {
                   variant="outline"
                   onClick={() => {
                     const defaultType = watchQuizType === 'MIXED' ? 'MULTIPLE_CHOICE' : 
-                                       (watchQuizType === 'FILL_BLANK' ? 'FILL_IN_THE_BLANK' : watchQuizType);
+                                       (watchQuizType === 'FILL_BLANK' ? 'FILL_BLANK' : watchQuizType);
                     appendQuestion({
                       questionText: '',
                       questionType: defaultType as any,
@@ -703,7 +703,7 @@ export function QuizBuilderAdminPage() {
                   variant="outline"
                   onClick={() => {
                     const defaultType = watchQuizType === 'MIXED' ? 'MULTIPLE_CHOICE' : 
-                                       (watchQuizType === 'FILL_BLANK' ? 'FILL_IN_THE_BLANK' : watchQuizType);
+                                       (watchQuizType === 'FILL_BLANK' ? 'FILL_BLANK' : watchQuizType);
                     appendQuestion({
                       questionText: '',
                       questionType: defaultType as any,

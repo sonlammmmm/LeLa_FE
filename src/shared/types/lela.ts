@@ -58,6 +58,15 @@ export type DeckDifficulty = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
 export type DeckVisibility = 'PUBLIC' | 'PRIVATE' | 'UNLISTED';
 export type DeckDisplayMode = 'FRONT' | 'BACK' | 'RANDOM';
 
+export interface TopicResponse {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  iconUrl?: string;
+  isActive: boolean;
+}
+
 export interface DeckResponse {
   id: number;
   deckCode: string;
@@ -67,7 +76,7 @@ export interface DeckResponse {
   coverImageUrl?: string;
   ownerId: number;
   languageId: number;
-  category: string;
+  topic?: TopicResponse;
   difficulty: DeckDifficulty;
   visibility: DeckVisibility;
   status: DeckStatus;
