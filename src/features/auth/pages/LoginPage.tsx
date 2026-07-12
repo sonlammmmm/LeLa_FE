@@ -22,7 +22,10 @@ export function LoginPage() {
       if (res.data.success && res.data.data) {
         login(res.data.data);
         message.success('Đăng nhập thành công!');
-        navigate('/dashboard');
+        const isAdmin = Array.isArray(res.data.data.user?.roles)
+          ? res.data.data.user.roles.includes('ADMIN')
+          : res.data.data.user?.role === 'ADMIN';
+        navigate(isAdmin ? '/admin/dashboard' : '/dashboard');
       } else {
         throw new Error('Đăng nhập thất bại');
       }
