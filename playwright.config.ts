@@ -1,17 +1,15 @@
+import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
-import { fileURLToPath } from 'url';
-import path from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const storagePath = path.join(__dirname, '.auth', 'user.json');
+const storagePath = fileURLToPath(new URL('./.auth/user.json', import.meta.url));
 
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: [['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:5173',

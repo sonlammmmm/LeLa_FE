@@ -1,19 +1,10 @@
-import { test as base, expect } from '@playwright/test';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { test as base } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const storagePath = path.join(__dirname, '..', '..', '.auth', 'user.json');
+const storagePath = fileURLToPath(new URL('../../.auth/user.json', import.meta.url));
 
 export const test = base.extend({
   storageState: async ({}, use) => {
-    if (fs.existsSync(storagePath)) {
-      await use(storagePath);
-      return;
-    }
-
     await use(storagePath);
   },
 });
