@@ -1,0 +1,22 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5173",
+      "localStorage": [
+        {
+          "name": "accessToken",
+          "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ5b2VkdS1kZW1vIiwic3ViIjoiZG9hbnRydW9uZ2R1eTgiLCJqdGkiOiIyNDdlZWZkNC0wNTYwLTQyZDgtYTgzNC1mOTg0MjVhNTdhNjYiLCJpYXQiOjE3ODQwNTA1NDIsImV4cCI6MTc4NDA3OTM0MiwidG9rZW5UeXBlIjoiYWNjZXNzIiwicm9sZXMiOlsiTEVBUk5FUiJdLCJ1c2VySWQiOjI3MDAwMiwiZnVsbE5hbWUiOiJRQSBBdXRvbWF0aW9uIFVzZXIiLCJlbWFpbCI6ImhpZXVuZ3V5ZW4zNjkyNDhwcm9AZ21haWwuY29tIiwibmF0aXZlTGFuZ0lkIjo2LCJ0YXJnZXRMYW5nSWQiOjF9.0njWygB9bRXZnd4LmUZYKWRmsw34ShzZw8TNoarvVHQ"
+        },
+        {
+          "name": "user",
+          "value": "{\"id\":270002,\"username\":\"doantruongduy8\",\"email\":\"hieunguyen369248pro@gmail.com\",\"fullName\":\"QA Automation User\",\"avatarUrl\":null,\"roles\":[\"LEARNER\"],\"timezone\":\"Asia/Saigon\",\"dailyGoalCards\":30,\"nativeLanguageId\":6,\"targetLanguageId\":1,\"promptDailyGoal\":true}"
+        },
+        {
+          "name": "refreshToken",
+          "value": "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ5b2VkdS1kZW1vIiwic3ViIjoiZG9hbnRydW9uZ2R1eTgiLCJqdGkiOiIzOTU3OGMzMy0xYzE1LTQwY2ItOTYyZC0zZDEwODJkNjg0MjUiLCJpYXQiOjE3ODQwNTA1NDIsImV4cCI6MTc4NDY1NTM0MiwidG9rZW5UeXBlIjoicmVmcmVzaCIsInVzZXJJZCI6MjcwMDAyfQ.d6SCo62p5_AJaP3CKCLXGc7G2Up_bDUT3A12zHKavAI"
+        }
+      ]
+    }
+  ]
+}
