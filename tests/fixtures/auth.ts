@@ -1,3 +1,4 @@
+//tự động hóa việc nạp trạng thái đăng nhập
 import { test as base } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 

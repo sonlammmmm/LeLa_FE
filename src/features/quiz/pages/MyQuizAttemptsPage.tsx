@@ -1,4 +1,4 @@
-import { Table, Tag, Button, Skeleton } from 'antd';
+import { Button, Skeleton, Table, Tag } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { quizAttemptsApi } from '../api/quiz-attempts.api';
@@ -12,13 +12,26 @@ export function MyQuizAttemptsPage() {
   });
 
   const columns = [
-    { title: 'Tên bài kiểm tra', dataIndex: 'quizTitle', render: (_: any, record: any) => <span className="font-bold">{record.quizTitle || `Quiz #${record.quizId}`}</span> },
-    { title: 'Ngày làm', dataIndex: 'startedAt', render: (val: string) => val ? new Date(val).toLocaleDateString('vi-VN') : '-' },
-    { title: 'Điểm số', dataIndex: 'scorePercent', render: (val: number) => <strong className="text-lg">{val != null ? Number(val).toFixed(0) : 0} / 100</strong> },
-    { 
-      title: 'Kết quả', 
+    {
+      title: 'Tên bài kiểm tra',
+      dataIndex: 'quizTitle',
+      render: (_: any, record: any) => <span className="font-bold">{record.quizTitle || `Quiz #${record.quizId}`}</span>
+    },
+    {
+      title: 'Ngày làm',
+      dataIndex: 'startedAt',
+      render: (value: string) => value ? new Date(value).toLocaleDateString('vi-VN') : '-'
+    },
+    {
+      title: 'Điểm số',
+      dataIndex: 'scorePercent',
+      render: (value: number) => <strong className="text-lg">{value != null ? Number(value).toFixed(0) : 0} / 100</strong>
+    },
+    {
+      title: 'Kết quả',
       render: (_: any, record: any) => {
         const isPassed = record.passed === true;
+
         return (
           <Tag color={isPassed ? '#2A8B9D' : '#F05A4A'} className="brutal-border font-bold px-3 py-1 text-sm">
             {isPassed ? 'ĐẠT' : 'CHƯA ĐẠT'}
@@ -29,9 +42,13 @@ export function MyQuizAttemptsPage() {
     {
       title: 'Hành động',
       render: (_: any, record: any) => (
-        <Button 
+        <Button
           className="brutal-border font-bold hover:!bg-[#1D2A3A] hover:!text-white transition-colors"
-          onClick={() => navigate(`/quiz-attempts/${record.publicId}/result`)}
+          onClick={() => navigate(`/quiz-attempts/${record.publicId}/result`, {
+            state: {
+              quizId: record.quizId,
+            },
+          })}
         >
           Xem kết quả
         </Button>
@@ -55,11 +72,11 @@ export function MyQuizAttemptsPage() {
         {isLoading ? (
           <Skeleton active />
         ) : (
-          <Table 
-            dataSource={data?.data?.content || []} 
-            columns={columns} 
+          <Table
+            dataSource={data?.data?.content || []}
+            columns={columns}
             rowKey="publicId"
-            pagination={false} 
+            pagination={false}
             className="brutal-table"
             locale={{ emptyText: <div className="py-10 font-bold text-lg text-gray-500">Chưa có bài kiểm tra nào.</div> }}
           />

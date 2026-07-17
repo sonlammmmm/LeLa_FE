@@ -1,5 +1,6 @@
 import { apiClient } from '../../../shared/lib/api';
 import type { ApiResponse, Page } from '../../../shared/types/lela';
+import { normalizeQuizId } from '../utils/quiz-attempts';
 
 export const quizAttemptsApi = {
   getAll: async (params?: any): Promise<ApiResponse<Page<any>>> => {
@@ -14,8 +15,14 @@ export const quizAttemptsApi = {
     const res = await apiClient.post<ApiResponse<any>>('/quiz-attempts', data);
     return res.data;
   },
-  startAttempt: async (quizId: number): Promise<ApiResponse<any>> => {
-    const res = await apiClient.post<ApiResponse<any>>(`/quiz-attempts/start/${quizId}`, {});
+  startAttempt: async (quizId: number | string | null | undefined): Promise<ApiResponse<any>> => {
+    const numericQuizId = normalizeQuizId(quizId);
+
+    if (!numericQuizId) {
+      throw new Error(`Invalid quizId when starting attempt: ${quizId}`);
+    }
+
+    const res = await apiClient.post<ApiResponse<any>>(`/quiz-attempts/start/${numericQuizId}`, {});
     return res.data;
   },
   submitAttempt: async (attemptId: number, data: any): Promise<ApiResponse<any>> => {

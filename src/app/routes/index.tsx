@@ -65,6 +65,7 @@ export function AppRoutes() {
           <Route path="/my-decks" element={<MyDecksPage />} />
           <Route path="/study/:deckId" element={<StudyPage />} />
           <Route path="/quiz/:quizId/start" element={<QuizAttemptPage />} />
+          <Route path="/quiz-attempts/:publicId" element={<QuizAttemptPage />} />
           <Route path="/quiz-attempts/:publicId/result" element={<QuizAttemptResultPage />} />
           <Route path="/my-quiz-attempts" element={<MyQuizAttemptsPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
